@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>波特律动 BaudLab — 一站式串口协议管理与调试</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%235e6ad2'/%3E%3Cpath d='M3.5 12 L6.5 12 L6.5 7 L9.5 7 L9.5 17 L12.5 17 L12.5 9.5 L15.5 9.5 L15.5 12 L20.5 12' fill='none' stroke='%23ffffff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232b44ff'/%3E%3Cpath d='M3.5 12 L6.5 12 L6.5 7 L9.5 7 L9.5 17 L12.5 17 L12.5 9.5 L15.5 9.5 L15.5 12 L20.5 12' fill='none' stroke='%23ffffff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <meta name="description" content="波特律动 BaudLab：可视化协议配置、实时调试、列表发送、文件传输、自定义看板、协议预览、变更审核与 AI 助手，内置 MCP 服务器，本地优先，数据不出本机。支持 Windows 10/11。">
 <link rel="canonical" href="https://alvan-1.github.io/BaudLab.io/">
 <meta property="og:type" content="website">
@@ -13,932 +13,864 @@
 <meta property="og:description" content="可视化协议配置、实时调试、列表发送、文件传输、自定义看板、协议预览、变更审核与 AI 助手，内置 MCP 服务器，本地优先，数据不出本机。支持 Windows 10/11。">
 <meta property="og:image" content="https://alvan-1.github.io/BaudLab.io/banner.gif">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f2f2f2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 /* ==================================================================
-   设计令牌 — 严格取自 DESIGN.md（Linear design language）front matter
-   营销站为 dark-only（DESIGN.md「Don't ship a light-mode marketing page」）
+   设计令牌 — 提取自 skilldeck.flyingfish.cc（浅色纸感风格）
+   paper #f2f2f2 · ink #0b0b0c · rule #dcdcdc · live #2b44ff
    ================================================================== */
 :root {
-  /* colors */
-  --primary: #5e6ad2;
-  --on-primary: #ffffff;
-  --primary-hover: #828fff;
-  --primary-focus: #5e69d1;
-  --ink: #f7f8f8;
-  --ink-muted: #d0d6e0;
-  --ink-subtle: #8a8f98;
-  --ink-tertiary: #62666d;
-  --canvas: #010102;
-  --surface-1: #0f1011;
-  --surface-2: #141516;
-  --surface-3: #18191a;
-  --surface-4: #191a1b;
-  --hairline: #23252a;
-  --hairline-strong: #34343a;
-  --hairline-tertiary: #3e3e44;
-  --semantic-success: #27a644;
+  --paper: #f2f2f2;
+  --card: #fff;
+  --ink: #0b0b0c;
+  --inkmid: #6a6a70;
+  --inksoft: #6d6d73;
+  --rule: #dcdcdc;
+  --live: #2b44ff;
+  --livelight: #8d9bff;
 
-  /* rounded */
-  --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px; --r-xxl: 24px; --r-pill: 9999px;
+  --font-display: "Archivo", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, "Noto Sans SC", monospace;
+  --font-cn: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 
-  /* spacing */
-  --s-xxs: 4px; --s-xs: 8px; --s-sm: 12px; --s-md: 16px; --s-lg: 24px; --s-xl: 32px; --s-xxl: 48px; --s-section: 96px;
+  --r-md: 8px; --r-lg: 16px; --r-xl: 20px; --r-2xl: 24px; --r-3xl: 32px; --r-4xl: 40px; --r-pill: 9999px;
 
-  /* typography */
-  --font-sans: "Inter", -apple-system, "SF Pro Display", system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-
-  /* motion（DESIGN.md 未定义动效，取保守值） */
-  --dur-fast: 120ms;
+  --dur-fast: 150ms;
   --dur-med: 200ms;
-  --ease-out: cubic-bezier(.22,.61,.36,1);
+  --ease: cubic-bezier(.22, .7, .2, 1);
 
-  --container: 1120px;
-  --nav-h: 56px;
+  --container: 1200px;
+  --nav-h: 64px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 16px); }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 24px); }
 body {
-  background: var(--canvas);
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
 }
-::selection { background: rgba(94,106,210,.4); }
+::selection { background: var(--ink); color: var(--paper); }
+:focus-visible { outline: 2px solid var(--live); outline-offset: 3px; border-radius: 4px; }
 a { color: inherit; text-decoration: none; }
-ul { list-style: none; }
+ul, ol { list-style: none; }
 svg { display: block; }
+img { max-width: 100%; height: auto; display: block; }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 
 /* ==================================================================
-   通用排版 — 对应 DESIGN.md typography 层级
+   排版 — SkillDeck 层级
    ================================================================== */
-.container { max-width: var(--container); margin: 0 auto; padding: 0 var(--s-xl); }
+.container { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+@media (min-width: 768px) { .container { padding: 0 40px; } }
 
+h1, h2, h3, h4 { font-family: var(--font-cn); font-weight: 800; letter-spacing: -.01em; line-height: 1.24; text-wrap: balance; }
+
+/* 等宽小标签（eyebrow） */
 .eyebrow {
-  font-size: 13px; font-weight: 500; letter-spacing: .4px;
-  color: var(--primary); text-transform: uppercase;
-  margin-bottom: var(--s-md);
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .22em;
+  color: var(--inkmid);
 }
-.display-lg {
-  font-size: 56px; font-weight: 600; line-height: 1.10;
-  letter-spacing: -1.8px;
-}
-.display-md {
-  font-size: 40px; font-weight: 600; line-height: 1.15;
-  letter-spacing: -1.0px;
-}
-.headline { font-size: 28px; font-weight: 600; line-height: 1.20; letter-spacing: -.6px; }
-.card-title { font-size: 22px; font-weight: 500; line-height: 1.25; letter-spacing: -.4px; }
-.subhead { font-size: 20px; font-weight: 400; line-height: 1.40; letter-spacing: -.2px; color: var(--ink-muted); }
-.body-lg { font-size: 18px; font-weight: 400; line-height: 1.50; letter-spacing: -.1px; }
-.body { font-size: 16px; font-weight: 400; line-height: 1.50; letter-spacing: -.05px; }
-.body-sm { font-size: 14px; font-weight: 400; line-height: 1.50; }
-.caption { font-size: 12px; font-weight: 400; line-height: 1.40; color: var(--ink-subtle); }
-.mono { font-family: var(--font-mono); font-size: 13px; }
+.eyebrow-inv { color: rgba(242, 242, 242, .55); }
 
-.section { padding: var(--s-section) 0; }
-.section-head { max-width: 640px; margin-bottom: var(--s-xxl); }
-.section-head .subhead { margin-top: var(--s-md); }
+/* 分区标题：eyebrow + 发丝线 + 大标题 */
+.sec-head { display: flex; flex-direction: column; gap: 24px; margin-bottom: 56px; }
+.eyebrow-row { display: flex; align-items: center; gap: 16px; }
+.eyebrow-row .rule-line { flex: 1; height: 1px; background: var(--rule); }
+.display-lg { font-size: clamp(2.5rem, 6vw, 3.75rem); font-weight: 800; line-height: 1.2; letter-spacing: -.02em; }
+.display-md { font-size: clamp(2rem, 4.6vw, 3.25rem); font-weight: 800; line-height: 1.2; letter-spacing: -.015em; max-width: 18ch; }
+.display-lg, .display-md, .dark-card h2 { word-break: keep-all; }
+
+.lede { font-size: clamp(1.35rem, 2.4vw, 1.5rem); font-weight: 500; line-height: 1.5; color: var(--inkmid); }
+.mono { font-family: var(--font-mono); }
+.caption { font-size: 12.5px; line-height: 1.6; color: var(--inksoft); }
+
+.section { padding: 64px 0; border-top: 1px solid var(--rule); }
+.section.no-rule { border-top: none; }
+@media (min-width: 768px) { .section { padding: 88px 0; } }
 
 /* ==================================================================
-   按钮 — DESIGN.md components.button-*
+   按钮 — 胶囊形
    ================================================================== */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-xs);
-  font-family: var(--font-sans); font-size: 14px; font-weight: 500; line-height: 1.20;
-  border-radius: var(--r-md); padding: 8px 14px;
-  border: 1px solid transparent; cursor: pointer;
-  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
-  white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600; line-height: 1.2;
+  border-radius: var(--r-pill); padding: 14px 30px;
+  border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+  transition: transform var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
-.btn:focus-visible { outline: 2px solid rgba(94,105,209,.5); outline-offset: 2px; }
-.btn svg { width: 16px; height: 16px; }
-.btn-lg { padding: 12px 20px; font-size: 15px; }
-.btn-lg svg { width: 18px; height: 18px; }
+.btn svg { width: 18px; height: 18px; }
+.btn:hover { transform: translateY(-2px); }
+.btn-lg { font-size: 17px; padding: 16px 32px; }
+.btn-lg svg { width: 21px; height: 21px; }
+.btn-sm { font-size: 14px; padding: 10px 22px; }
+.btn-sm svg { width: 16px; height: 16px; }
 
-.btn-primary { background: var(--primary); color: var(--on-primary); }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-primary:active { background: var(--primary-focus); }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { background: #000; }
 
-.btn-secondary { background: var(--surface-1); color: var(--ink); border-color: var(--hairline); }
-.btn-secondary:hover { background: var(--surface-2); border-color: var(--hairline-strong); }
-.btn-secondary:active { background: var(--surface-3); }
+.btn-secondary { border-color: rgba(11, 11, 12, .25); color: var(--ink); background: transparent; }
+.btn-secondary:hover { border-color: var(--ink); }
 
-.btn-tertiary { background: var(--canvas); color: var(--ink); }
-.btn-tertiary:hover { background: var(--surface-1); }
+/* 深色卡片上的按钮 */
+.btn-paper { background: var(--paper); color: var(--ink); }
+.btn-paper:hover { background: #fff; }
+.btn-ghost-inv { border-color: rgba(242, 242, 242, .25); color: var(--paper); }
+.btn-ghost-inv:hover { border-color: var(--paper); }
 
-.btn-ghost { background: transparent; color: var(--ink-subtle); }
-.btn-ghost:hover { color: var(--ink); background: var(--surface-1); }
+/* 次级文字链接 */
+.link-under {
+  display: inline-flex; align-items: center; min-height: 40px;
+  font-size: 14px; font-weight: 500; color: var(--inkmid);
+  text-decoration: underline; text-underline-offset: 4px;
+  transition: color var(--dur-fast) var(--ease);
+}
+.link-under:hover { color: var(--ink); }
 
-/* status pill — DESIGN.md components.status-badge */
+/* 状态徽标 */
 .badge {
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--surface-2); color: var(--ink-muted);
-  font-size: 12px; line-height: 1.4;
-  border-radius: var(--r-pill); padding: 2px 8px;
+  background: rgba(11, 11, 12, .06); color: var(--ink);
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.4;
+  border-radius: var(--r-pill); padding: 4px 12px;
 }
-.badge .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--semantic-success); }
-.badge-primary { background: rgba(94,106,210,.12); color: var(--primary); }
-.badge-primary .dot { background: var(--primary); }
+.badge .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--live); flex: none; }
+.badge .dot.ok { background: #27a644; }
 
 /* ==================================================================
-   Top Nav — DESIGN.md components.top-nav（56px sticky）
+   顶栏 — sticky · 半透明纸底 + 模糊 · 发丝底线
    ================================================================== */
 .nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: var(--nav-h);
-  background: rgba(1,1,2,.82);
+  position: sticky; top: 0; z-index: 50;
+  border-bottom: 1px solid rgba(220, 220, 220, .7);
+  background: rgba(242, 242, 242, .85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid transparent;
-  transition: border-color var(--dur-med) var(--ease-out);
 }
-.nav.scrolled { border-bottom-color: var(--hairline); }
 .nav-inner {
-  max-width: var(--container); height: 100%; margin: 0 auto; padding: 0 var(--s-xl);
-  display: flex; align-items: center; gap: var(--s-xl);
+  max-width: var(--container); margin: 0 auto; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
 }
-.brand { display: flex; align-items: center; gap: var(--s-xs); font-weight: 600; font-size: 15px; letter-spacing: -.2px; }
-.brand-mark {
-  width: 26px; height: 26px; border-radius: var(--r-sm);
-  background: var(--primary); color: var(--on-primary);
-  display: grid; place-items: center; flex: none;
+@media (min-width: 768px) { .nav-inner { padding: 14px 40px; } }
+
+.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.brand-mark { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; flex: none; }
+.brand-name { font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.brand small { font-size: 12px; font-weight: 400; color: var(--inksoft); margin-left: 2px; }
+
+.nav-links { display: none; align-items: center; gap: 32px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--inkmid); }
+.nav-links a { transition: color var(--dur-fast) var(--ease); }
+.nav-links a:hover { color: var(--ink); }
+@media (min-width: 900px) { .nav-links { display: flex; } }
+
+.nav-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.nav-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid rgba(11, 11, 12, .2); border-radius: var(--r-pill);
+  padding: 7px 14px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  transition: all var(--dur-fast) var(--ease);
 }
-.brand-mark svg { width: 16px; height: 16px; }
-.brand small { font-size: 12px; font-weight: 400; color: var(--ink-subtle); margin-left: 2px; }
-.nav-links { display: flex; align-items: center; gap: var(--s-xxs); margin-left: auto; }
-.nav-links a {
-  font-size: 14px; color: var(--ink-subtle); padding: 6px 10px; border-radius: var(--r-sm);
-  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+.nav-pill:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.nav-pill svg { width: 14px; height: 14px; }
+.nav-burger { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(11, 11, 12, .2); border-radius: var(--r-pill); }
+.nav-burger svg { width: 16px; height: 16px; }
+@media (min-width: 900px) { .nav-burger { display: none; } }
+
+.nav-links.open {
+  display: flex; flex-direction: column; align-items: stretch; gap: 0;
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--paper); border-bottom: 1px solid var(--rule);
+  padding: 8px 24px 16px;
 }
-.nav-links a:hover { color: var(--ink); background: var(--surface-1); }
-.nav-actions { display: flex; align-items: center; gap: var(--s-xs); }
-.nav-icon-link {
-  width: 34px; height: 34px; border-radius: var(--r-md);
-  display: grid; place-items: center; color: var(--ink-subtle);
-  border: 1px solid var(--hairline); background: var(--surface-1);
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-.nav-icon-link:hover { color: var(--ink); border-color: var(--hairline-strong); }
-.nav-icon-link svg { width: 16px; height: 16px; }
-.nav-burger { display: none; }
+.nav-links.open a { padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 13px; }
+.nav-links.open a:last-child { border-bottom: none; }
 
 /* ==================================================================
-   Hero
+   Hero — 居中 · 大标题 · 错峰入场
    ================================================================== */
-.hero { padding: calc(var(--nav-h) + 88px) 0 72px; }
-.hero-badge { margin-bottom: var(--s-lg); }
-.hero h1 { max-width: 760px; margin-bottom: var(--s-lg); }
-.hero .lede { max-width: 640px; margin-bottom: var(--s-xl); }
-.hero-cta { display: flex; flex-wrap: wrap; gap: var(--s-sm); margin-bottom: var(--s-lg); }
-.hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-xs) var(--s-md); }
-.hero-meta span { font-size: 13px; color: var(--ink-subtle); display: inline-flex; align-items: center; gap: 6px; }
-.hero-meta svg { width: 14px; height: 14px; color: var(--ink-tertiary); }
+.hero {
+  display: flex; flex-direction: column; align-items: center; gap: 56px;
+  min-height: 85vh; padding: 56px 0 72px;
+}
+@media (min-width: 1024px) { .hero { padding: 96px 0; } }
+
+.hero-head { display: flex; flex-direction: column; align-items: center; gap: 26px; max-width: 768px; margin: 0 auto; text-align: center; }
+.hero-mark { width: 116px; height: 116px; margin-bottom: -14px; }
+@media (min-width: 768px) { .hero-mark { width: 152px; height: 152px; } }
+.hero h1 { font-size: clamp(2.5rem, 6.4vw, 3.75rem); font-weight: 900; line-height: 1.2; letter-spacing: -.02em; word-break: keep-all; }
+.hero .lede { max-width: 600px; margin-top: -4px; }
+.hero-meta { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; color: var(--inksoft); max-width: 64ch; }
+.hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 10px; }
+.hero-cta-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.hero-visual { width: 100%; max-width: 896px; margin: 0 auto; position: relative; }
 
 /* ==================================================================
-   卡片 — DESIGN.md components.feature-card / product-screenshot-card
+   深色大圆角卡片（起因 / 下载）
    ================================================================== */
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-md); }
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-md); }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-md); }
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+@media (min-width: 768px) { .wrap { padding: 0 40px; } }
 
-/* 功能全景表（深色表面 + hairline 分隔，与 DESIGN.md 令牌一致） */
+.dark-card {
+  background: var(--ink); color: var(--paper);
+  border-radius: var(--r-4xl); overflow: hidden;
+  box-shadow: 0 2px 4px rgba(11, 11, 12, .08), 0 48px 90px -32px rgba(11, 11, 12, .45);
+  padding: 40px 28px;
+}
+@media (min-width: 768px) { .dark-card { padding: 64px; } }
+.dark-card h2 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.1; letter-spacing: -.02em; max-width: 640px; margin-top: 16px; }
+@media (min-width: 768px) { .dark-card h2 { max-width: 780px; } }
+
+/* 起因列表：等宽键 + 说明行，发丝分隔 */
+.pain-list { margin-top: 8px; display: flex; flex-direction: column; }
+.pain-list li {
+  display: flex; flex-direction: column; gap: 6px;
+  border-top: 1px solid rgba(242, 242, 242, .15); padding: 20px 0;
+}
+@media (min-width: 768px) {
+  .pain-list li { flex-direction: row; align-items: baseline; gap: 32px; padding: 20px 0; }
+}
+.pain-list .k {
+  width: auto; flex-shrink: 0;
+  font-family: var(--font-mono); font-size: 13px; color: rgba(242, 242, 242, .62);
+}
+@media (min-width: 768px) { .pain-list .k { width: 16rem; } }
+.pain-list .v { font-size: 17px; line-height: 1.55; color: rgba(242, 242, 242, .9); word-break: keep-all; }
+@media (min-width: 768px) { .pain-list .v { font-size: 18.4px; } }
+.pain-close {
+  max-width: 40ch; margin-top: 8px;
+  font-family: var(--font-cn); font-size: 1.35rem; font-weight: 600;
+  line-height: 1.4; color: rgba(242, 242, 242, .7); word-break: keep-all;
+}
+@media (min-width: 768px) { .pain-close { font-size: 1.75rem; } }
+
+/* ==================================================================
+   功能卡 — 白卡 + 发丝边
+   ================================================================== */
+.grid-3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 768px) { .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.card {
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-xl); padding: 28px;
+  transition: border-color var(--dur-med) var(--ease), transform var(--dur-med) var(--ease);
+}
+.card:hover { border-color: #c6c6c6; }
+.card-icon {
+  width: 38px; height: 38px; border-radius: var(--r-md);
+  background: rgba(11, 11, 12, .06);
+  display: grid; place-items: center; color: var(--live);
+  margin-bottom: 16px; flex: none;
+}
+.card-icon svg { width: 19px; height: 19px; }
+.card h3 { font-size: 16.5px; font-weight: 700; letter-spacing: -.005em; line-height: 1.35; margin-bottom: 8px; }
+.card p { font-size: 14.5px; line-height: 1.7; color: var(--inkmid); }
+
+/* 功能全景表 */
 .ftable-wrap {
-  margin-top: var(--s-xl);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-  background: var(--surface-1);
-  overflow: hidden;
+  margin-top: 40px;
+  border: 1px solid var(--rule); border-radius: var(--r-xl);
+  background: var(--card); overflow: hidden;
 }
 .ftable-scroll { overflow-x: auto; }
 .ftable { width: 100%; border-collapse: collapse; min-width: 720px; }
 .ftable th {
-  text-align: left; font-size: 12px; font-weight: 500; letter-spacing: .4px;
-  text-transform: uppercase; color: var(--ink-subtle);
-  padding: var(--s-sm) var(--s-md); border-bottom: 1px solid var(--hairline);
-  background: var(--surface-2); white-space: nowrap;
+  text-align: left; font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--inkmid);
+  padding: 14px 20px; border-bottom: 1px solid var(--rule);
+  background: var(--paper); white-space: nowrap;
 }
-.ftable td {
-  padding: var(--s-sm) var(--s-md); border-bottom: 1px solid var(--hairline);
-  font-size: 14px; color: var(--ink-muted); vertical-align: top; line-height: 1.55;
-}
+.ftable td { padding: 14px 20px; border-bottom: 1px solid var(--rule); font-size: 14px; color: var(--inkmid); vertical-align: top; line-height: 1.65; }
 .ftable tbody tr:last-child td { border-bottom: none; }
-.ftable tbody tr:hover td { background: var(--surface-2); }
-.ftable td.mod { color: var(--ink); font-weight: 500; white-space: nowrap; }
-.ftable td.mod svg { width: 15px; height: 15px; color: var(--primary); display: inline-block; vertical-align: -3px; margin-right: 6px; }
-.ftable td b { color: var(--ink); font-weight: 500; }
-.ftable .mono { font-size: 12.5px; color: var(--ink-muted); }
-
-.card {
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-  padding: var(--s-lg);
-  transition: background-color var(--dur-med) var(--ease-out), border-color var(--dur-med) var(--ease-out);
-}
-.card:hover { background: var(--surface-2); border-color: var(--hairline-strong); }
-.card-icon {
-  width: 36px; height: 36px; border-radius: var(--r-md);
-  background: var(--surface-2); border: 1px solid var(--hairline);
-  display: grid; place-items: center; color: var(--primary);
-  margin-bottom: var(--s-md);
-}
-.card:hover .card-icon { background: var(--surface-3); }
-.card-icon svg { width: 18px; height: 18px; }
-.card h3 { font-size: 16px; font-weight: 600; letter-spacing: -.2px; margin-bottom: var(--s-xs); }
-.card p { font-size: 14px; color: var(--ink-subtle); }
+.ftable tbody tr:hover td { background: var(--paper); }
+.ftable td.mod { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.ftable td.mod svg { width: 15px; height: 15px; color: var(--live); display: inline-block; vertical-align: -3px; margin-right: 7px; }
+.ftable td b { color: var(--ink); font-weight: 600; }
+.ftable .mono { font-size: 12.5px; color: var(--inkmid); }
 
 /* ==================================================================
-   产品预览 — product-screenshot-card（rounded.xl，页面主角）
+   应用窗口 mock — 浅色窗体 + 深色终端对比
    ================================================================== */
 .preview-wrap { position: relative; }
 .screenshot {
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-xl);
-  padding: var(--s-lg);
-  position: relative;
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-lg); padding: 18px;
 }
-/* 顶部发丝高光 — DESIGN.md Decorative Depth */
-.screenshot::before, .callout::before {
-  content: ""; position: absolute; top: 0; left: 24px; right: 24px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
-  border-radius: 1px;
-}
-.callout::before { left: 12px; right: 12px; }
-
 .app-window {
-  background: var(--canvas);
-  border: 1px solid var(--hairline);
+  background: var(--card);
+  border: 1px solid var(--rule);
   border-radius: var(--r-md);
   overflow: hidden;
 }
 .app-titlebar {
-  height: 36px; display: flex; align-items: center; gap: var(--s-xs);
-  padding: 0 var(--s-sm);
-  border-bottom: 1px solid var(--hairline);
-  background: var(--surface-1);
+  height: 38px; display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; border-bottom: 1px solid var(--rule); background: var(--card);
 }
 .app-dots { display: flex; gap: 6px; }
-.app-dots i { width: 10px; height: 10px; border-radius: var(--r-pill); background: var(--hairline-tertiary); }
-.app-titlebar .title {
-  flex: 1; text-align: center; font-size: 12px; color: var(--ink-subtle);
-  font-family: var(--font-mono);
-}
+.app-dots i { width: 10px; height: 10px; border-radius: var(--r-pill); background: var(--rule); }
+.app-titlebar .title { flex: 1; text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--inksoft); }
 .app-body { display: flex; min-height: 420px; }
+@media (max-width: 768px) { .app-body { min-height: 340px; } }
 
-/* 侧边栏（chrome 暗于内容） */
 .app-sidebar {
-  width: 46px; flex: none;
-  border-right: 1px solid var(--hairline);
-  display: flex; flex-direction: column; align-items: center; gap: var(--s-xxs);
-  padding: var(--s-sm) 0;
+  width: 46px; flex: none; border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 0;
 }
-.app-sidebar .si {
-  width: 30px; height: 30px; border-radius: var(--r-sm);
-  display: grid; place-items: center; color: var(--ink-tertiary);
-}
+@media (max-width: 768px) { .app-sidebar { display: none; } }
+.app-sidebar .si { width: 30px; height: 30px; border-radius: 6px; display: grid; place-items: center; color: var(--inksoft); }
 .app-sidebar .si svg { width: 16px; height: 16px; }
-.app-sidebar .si.active { color: var(--primary); background: var(--surface-2); }
+.app-sidebar .si.active { color: var(--live); background: rgba(43, 68, 255, .08); }
 
-/* 主区 */
 .app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .app-tabs {
-  display: flex; align-items: center; gap: var(--s-xxs);
-  padding: var(--s-xs) var(--s-sm) 0;
-  border-bottom: 1px solid var(--hairline);
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 12px 0; border-bottom: 1px solid var(--rule); overflow-x: auto;
 }
 .app-tabs .t {
-  font-size: 12px; color: var(--ink-subtle);
-  padding: 6px 10px; border-radius: var(--r-sm) var(--r-sm) 0 0;
-  border: 1px solid transparent; border-bottom: none;
-  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--inkmid); padding: 7px 11px;
+  border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0;
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
 }
 .app-tabs .t svg { width: 13px; height: 13px; }
-.app-tabs .t.active { color: var(--ink); background: var(--surface-1); border-color: var(--hairline); }
+.app-tabs .t.active { color: var(--ink); background: var(--card); border-color: var(--rule); }
 .app-tabs .spacer { flex: 1; }
 .app-tabs .port {
-  font-family: var(--font-mono); font-size: 11px; color: var(--ink-subtle);
-  display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--inkmid);
+  display: flex; align-items: center; gap: 6px; padding: 7px 10px; white-space: nowrap;
 }
-.app-tabs .port .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--semantic-success); }
+.app-tabs .port .dot, .app-bar .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: #27a644; flex: none; }
 
 /* 信号表格 */
-.app-table { padding: var(--s-sm); }
+.app-table { padding: 12px; }
 .app-table table { width: 100%; border-collapse: collapse; }
-.app-table th {
-  font-size: 11px; font-weight: 500; color: var(--ink-tertiary); text-align: left;
-  padding: 6px var(--s-xs); border-bottom: 1px solid var(--hairline);
-}
-.app-table td {
-  font-size: 12px; color: var(--ink-muted);
-  padding: 7px var(--s-xs); border-bottom: 1px solid var(--hairline);
-}
+.app-table th { font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; color: var(--inksoft); text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--rule); }
+.app-table td { font-size: 12.5px; color: var(--inkmid); padding: 8px; border-bottom: 1px solid var(--rule); }
 .app-table tr:last-child td { border-bottom: none; }
 .app-table td:first-child { color: var(--ink); font-family: var(--font-mono); font-size: 12px; }
-.app-table .dir { font-size: 11px; padding: 1px 6px; border-radius: var(--r-xs); }
-.app-table .dir.tx { color: var(--primary); background: rgba(94,106,210,.12); }
-.app-table .dir.rx { color: var(--ink-muted); background: var(--surface-2); }
+.app-table .dir { font-size: 11px; padding: 1px 7px; border-radius: 4px; }
+.app-table .dir.tx { color: var(--live); background: rgba(43, 68, 255, .08); }
+.app-table .dir.rx { color: var(--inkmid); background: var(--paper); }
 
-/* 终端 */
+/* 终端 — 深色反差条（呼应 SkillDeck 深色大卡） */
 .app-terminal {
-  border-top: 1px solid var(--hairline);
-  padding: var(--s-sm) var(--s-md);
-  font-family: var(--font-mono); font-size: 11.5px; line-height: 1.8;
-  color: var(--ink-subtle);
-  background: var(--surface-1);
+  border-top: none; padding: 12px 16px;
+  font-family: var(--font-mono); font-size: 11.5px; line-height: 1.85;
+  color: rgba(242, 242, 242, .55);
+  background: var(--ink);
   min-height: 108px;
 }
-.app-terminal .row { display: flex; gap: var(--s-sm); white-space: nowrap; overflow: hidden; }
-.app-terminal .ts { color: var(--ink-tertiary); flex: none; }
-.app-terminal .tx { color: var(--primary); flex: none; }
-.app-terminal .rx { color: var(--ink-muted); flex: none; }
+.app-terminal .row { display: flex; gap: 14px; white-space: nowrap; overflow: hidden; }
+.app-terminal .ts { color: rgba(242, 242, 242, .52); flex: none; }
+.app-terminal .tx { color: var(--livelight); flex: none; }
+.app-terminal .rx { color: rgba(242, 242, 242, .8); flex: none; }
 .app-terminal .hex { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.app-terminal .cursor { display: inline-block; width: 7px; height: 13px; background: var(--primary); vertical-align: -2px; animation: blink 1.2s steps(2) infinite; }
+.app-terminal .cursor { display: inline-block; width: 7px; height: 13px; background: var(--livelight); vertical-align: -2px; animation: blink 1.2s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* 标注 callout（桌面端） */
+/* 浮动标注 callout（超宽屏） */
 .callout {
   position: absolute; width: 216px;
-  background: var(--surface-2); border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-lg); padding: var(--s-sm) var(--s-md);
-  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-lg); padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(11, 11, 12, .1);
 }
-.callout h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
-.callout h4 svg { width: 14px; height: 14px; color: var(--primary); }
-.callout p { font-size: 12px; color: var(--ink-subtle); line-height: 1.5; }
+.callout .ct-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+.callout .ct-title svg { width: 14px; height: 14px; color: var(--live); }
+.callout p { font-size: 12px; color: var(--inkmid); line-height: 1.55; }
 .callout.c1 { top: 56px; right: -232px; }
 .callout.c2 { bottom: 128px; right: -232px; }
 .callout.c3 { bottom: 8px; left: -232px; }
-.callout .pin {
-  position: absolute; top: 18px; width: 7px; height: 7px; border-radius: var(--r-pill);
-  background: var(--primary); box-shadow: 0 0 0 4px rgba(94,106,210,.18);
-}
+.callout .pin { position: absolute; top: 18px; width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--live); box-shadow: 0 0 0 4px rgba(43, 68, 255, .15); }
 .callout.c1 .pin, .callout.c2 .pin { left: -4px; }
 .callout.c3 .pin { right: -4px; }
-.callout .pin::after {
-  content: ""; position: absolute; top: 3px; width: 120px; height: 1px;
-  background: linear-gradient(90deg, rgba(94,106,210,.5), transparent);
-}
+.callout .pin::after { content: ""; position: absolute; top: 3px; width: 120px; height: 1px; background: linear-gradient(90deg, rgba(43, 68, 255, .45), transparent); }
 .callout.c1 .pin::after, .callout.c2 .pin::after { left: 7px; }
-.callout.c3 .pin::after { right: 7px; background: linear-gradient(270deg, rgba(94,106,210,.5), transparent); }
+.callout.c3 .pin::after { right: 7px; background: linear-gradient(270deg, rgba(43, 68, 255, .45), transparent); }
+@media (max-width: 1559px) { .callout { display: none; } }
 
-/* ==================================================================
-   产品预览 — 多界面演示网格
-   ================================================================== */
-.mock-grid {
-  display: grid; grid-template-columns: repeat(2, 1fr);
-  gap: var(--s-md); margin-top: var(--s-md);
-}
-.mock-item { display: flex; flex-direction: column; gap: var(--s-sm); }
+/* 多界面演示网格 */
+.mock-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 900px) { .mock-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mock-item { display: flex; flex-direction: column; gap: 14px; }
 .mock-item .screenshot { flex: 1; display: flex; flex-direction: column; }
 .mock-item .app-window { flex: 1; }
-.mock-caption { display: flex; align-items: baseline; gap: var(--s-xs); flex-wrap: wrap; }
+.mock-caption { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .mock-caption .mk {
-  font-family: var(--font-mono); font-size: 11px; color: var(--primary);
-  border: 1px solid rgba(94,106,210,.35); border-radius: var(--r-xs);
-  padding: 1px 6px; flex: none;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--live);
+  border: 1px solid rgba(43, 68, 255, .35); border-radius: 4px;
+  padding: 2px 7px; flex: none; letter-spacing: .06em;
 }
-.mock-caption h4 { font-size: 14px; font-weight: 600; letter-spacing: -.2px; }
-.mock-caption p { font-size: 12.5px; color: var(--ink-subtle); flex-basis: 100%; }
+.mock-caption h3 { font-size: 15px; font-weight: 700; }
+.mock-caption p { font-size: 13.5px; line-height: 1.7; color: var(--inkmid); flex-basis: 100%; }
 
-/* 迷你应用窗（紧凑演示） */
+/* ---- 连接栏 / 工具条 ---- */
 .app-window.mini .app-body { min-height: 0; }
-.app-window.mini .app-content { padding: var(--s-sm) var(--s-md); display: flex; flex-direction: column; gap: var(--s-xs); }
-
-/* 连接栏 / 工具条 */
+.app-window.mini .app-content { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
 .app-bar {
-  display: flex; align-items: center; gap: var(--s-xs);
-  padding: var(--s-xs) var(--s-sm); border-bottom: 1px solid var(--hairline);
-  font-family: var(--font-mono); font-size: 11px; color: var(--ink-subtle);
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 12px; border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 11px; color: var(--inkmid);
 }
-.app-bar .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--semantic-success); }
-.app-bar .chip {
-  border: 1px solid var(--hairline); border-radius: var(--r-xs);
-  padding: 1px 6px; background: var(--surface-1); color: var(--ink-muted);
-}
-.app-bar .chip.hot { color: var(--primary); border-color: rgba(94,106,210,.4); background: rgba(94,106,210,.1); }
+.app-bar .chip { border: 1px solid var(--rule); border-radius: 4px; padding: 2px 7px; background: var(--card); color: var(--inkmid); }
+.app-bar .chip.hot { color: var(--live); border-color: rgba(43, 68, 255, .4); background: rgba(43, 68, 255, .07); }
 .app-bar .spacer { flex: 1; }
 
-/* 帧预览（原始值 / 解析值 / 物理值） */
+/* ---- 帧预览三视图 ---- */
 .fv {
-  display: grid; grid-template-columns: auto 1fr; gap: 4px var(--s-sm);
-  font-size: 11.5px; padding: var(--s-xs) var(--s-sm);
-  background: var(--surface-1); border-bottom: 1px solid var(--hairline);
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 14px;
+  font-size: 11.5px; padding: 9px 14px;
+  background: var(--paper); border-bottom: 1px solid var(--rule);
 }
-.fv .k { color: var(--ink-tertiary); font-family: var(--font-mono); font-size: 10.5px; white-space: nowrap; }
-.fv .v { color: var(--ink-muted); font-family: var(--font-mono); }
-.fv .v b { color: var(--ink); font-weight: 500; }
-.fv .v .ok { color: var(--semantic-success); }
+.fv .k { color: var(--inksoft); font-family: var(--font-mono); font-size: 10.5px; white-space: nowrap; }
+.fv .v { color: var(--inkmid); font-family: var(--font-mono); }
+.fv .v b { color: var(--ink); font-weight: 600; }
+.fv .v .ok { color: #147a34; }
 
-/* AI 对话 */
-.ai-chat { display: flex; flex-direction: column; gap: var(--s-xs); padding: var(--s-sm) var(--s-md); }
-.ai-msg { display: flex; gap: var(--s-xs); align-items: flex-start; }
+/* ---- AI 对话 ---- */
+.ai-chat { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; }
+.ai-msg { display: flex; gap: 8px; align-items: flex-start; }
 .ai-msg .ava {
-  width: 20px; height: 20px; border-radius: var(--r-sm); flex: none;
+  width: 20px; height: 20px; border-radius: 6px; flex: none;
   display: grid; place-items: center; font-size: 10px; font-weight: 600;
-  background: var(--surface-2); border: 1px solid var(--hairline); color: var(--ink-subtle);
+  background: var(--paper); border: 1px solid var(--rule); color: var(--inkmid);
 }
-.ai-msg.me .ava { background: rgba(94,106,210,.15); border-color: rgba(94,106,210,.4); color: var(--primary); }
+.ai-msg.me .ava { background: rgba(43, 68, 255, .1); border-color: rgba(43, 68, 255, .4); color: var(--live); }
 .ai-msg .bubble {
-  font-size: 11.5px; line-height: 1.6; color: var(--ink-muted);
-  background: var(--surface-1); border: 1px solid var(--hairline);
-  border-radius: var(--r-sm); padding: 6px var(--s-xs);
+  font-size: 11.5px; line-height: 1.65; color: var(--inkmid);
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 8px; padding: 7px 10px;
 }
-.ai-msg.me .bubble { color: var(--ink); }
+.ai-msg.me .bubble { color: var(--ink); background: var(--card); }
 .ai-tool {
-  margin-top: 5px; border: 1px dashed var(--hairline-strong); border-radius: var(--r-xs);
-  padding: 5px var(--s-xs); font-family: var(--font-mono); font-size: 10.5px;
-  color: var(--ink-subtle); background: var(--canvas);
+  margin-top: 5px; border: 1px dashed var(--rule); border-radius: 6px;
+  padding: 6px 10px; font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--inkmid); background: var(--card); word-break: break-all;
 }
-.ai-tool b { color: var(--primary); font-weight: 500; }
-.ai-tool .ok { color: var(--semantic-success); }
+.ai-tool b { color: var(--live); font-weight: 500; }
+.ai-tool .ok { color: #147a34; }
 
-/* MCP 写操作确认弹窗（mock） */
-.ai-mask {
-  position: relative; border-top: 1px solid var(--hairline);
-  background: rgba(1,1,2,.72); padding: var(--s-sm);
-  display: flex; justify-content: center;
-}
+/* ---- MCP 确认弹窗 ---- */
+.ai-mask { position: relative; border-top: 1px solid var(--rule); background: var(--paper); padding: 10px; display: flex; justify-content: center; }
 .ai-confirm {
-  width: 100%; max-width: 300px;
-  background: var(--surface-2); border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-md); padding: var(--s-sm) var(--s-md);
-  box-shadow: 0 12px 32px rgba(0,0,0,.55);
+  width: 100%; max-width: 320px;
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-md); padding: 10px 14px;
+  box-shadow: 0 12px 28px rgba(11, 11, 12, .12);
 }
-.ai-confirm .ttl { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.ai-confirm .ttl svg { width: 13px; height: 13px; color: var(--primary); }
-.ai-confirm .msg { font-size: 11px; color: var(--ink-muted); line-height: 1.55; }
+.ai-confirm .ttl { font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.ai-confirm .ttl svg { width: 13px; height: 13px; color: var(--live); }
+.ai-confirm .msg { font-size: 11px; color: var(--inkmid); line-height: 1.55; }
 .ai-confirm .msg .mono { color: var(--ink); }
-.ai-confirm .acts { display: flex; gap: var(--s-xs); margin-top: var(--s-xs); }
+.ai-confirm .acts { display: flex; gap: 8px; margin-top: 8px; }
 .ai-btn {
-  font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: var(--r-xs);
-  border: 1px solid var(--hairline-strong); color: var(--ink-muted); background: var(--surface-1);
+  font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 5px;
+  border: 1px solid var(--rule); color: var(--inkmid); background: var(--card);
+  white-space: nowrap;
 }
-.ai-btn.pri { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.ai-btn.pri { background: var(--live); border-color: var(--live); color: #fff; }
 
-/* 自定义看板 */
+/* ---- 自定义看板 ---- */
 .db-canvas {
-  position: relative; padding: var(--s-sm);
+  position: relative; padding: 10px;
   background:
-    radial-gradient(circle at 1px 1px, var(--hairline) 1px, transparent 0) 0 0 / 14px 14px,
-    var(--canvas);
-  display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-xs);
+    radial-gradient(circle at 1px 1px, var(--rule) 1px, transparent 0) 0 0 / 14px 14px,
+    var(--paper);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
 }
-.db-card {
-  background: var(--surface-1); border: 1px solid var(--hairline);
-  border-radius: var(--r-sm); padding: var(--s-xs) var(--s-xs) 6px;
-}
-.db-card .ttl { font-size: 10.5px; color: var(--ink-tertiary); display: flex; align-items: center; gap: 5px; }
+.db-card { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 8px 7px; }
+.db-card .ttl { font-size: 10.5px; color: var(--inksoft); display: flex; align-items: center; gap: 5px; }
 .db-card .ttl svg { width: 11px; height: 11px; }
 .db-card .val { font-family: var(--font-mono); font-size: 16px; font-weight: 600; color: var(--ink); letter-spacing: -.5px; }
-.db-card .val small { font-size: 10px; color: var(--ink-subtle); font-weight: 400; margin-left: 2px; }
+.db-card .val small { font-size: 10px; color: var(--inksoft); font-weight: 400; margin-left: 2px; }
 .db-card.wide { grid-column: span 2; }
 .db-card .spark { margin-top: 2px; }
-.db-sw {
-  width: 26px; height: 14px; border-radius: var(--r-pill); flex: none;
-  background: var(--surface-3); border: 1px solid var(--hairline-strong); position: relative;
-}
-.db-sw::after {
-  content: ""; position: absolute; top: 1px; left: 1px; width: 10px; height: 10px;
-  border-radius: var(--r-pill); background: var(--ink-tertiary);
-}
-.db-sw.on { background: rgba(94,106,210,.25); border-color: var(--primary); }
-.db-sw.on::after { left: 13px; background: var(--primary); }
+.db-sw { width: 26px; height: 14px; border-radius: var(--r-pill); flex: none; background: var(--rule); border: 1px solid var(--rule); position: relative; }
+.db-sw::after { content: ""; position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: var(--r-pill); background: var(--card); }
+.db-sw.on { background: rgba(43, 68, 255, .25); border-color: var(--live); }
+.db-sw.on::after { left: 13px; background: var(--live); }
 .db-trigger {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 10.5px; color: var(--ink-subtle);
-  border-top: 1px solid var(--hairline); padding: 6px var(--s-sm);
-  background: var(--surface-1);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 10.5px; color: var(--inkmid);
+  border-top: 1px solid var(--rule); padding: 7px 14px; background: var(--card);
 }
-.db-trigger .mono { color: var(--primary); }
+.db-trigger .mono { color: var(--live); }
 
-/* 变更审核 diff */
-.diff { padding: var(--s-xs) var(--s-sm); display: flex; flex-direction: column; gap: 4px; }
-.diff-row {
-  display: grid; grid-template-columns: 76px 1fr; gap: var(--s-xs);
-  font-size: 11px; align-items: center;
-}
-.diff-row .f { font-family: var(--font-mono); color: var(--ink-subtle); font-size: 10.5px; }
-.diff-old, .diff-new { font-family: var(--font-mono); font-size: 10.5px; padding: 2px 6px; border-radius: var(--r-xs); }
-.diff-old { color: var(--ink-tertiary); background: var(--surface-2); text-decoration: line-through; }
-.diff-new { color: var(--ink); background: rgba(94,106,210,.12); border: 1px solid rgba(94,106,210,.3); }
-.diff-arrow { color: var(--ink-tertiary); font-size: 10px; }
-.review-acts {
-  display: flex; align-items: center; gap: var(--s-xs);
-  border-top: 1px solid var(--hairline); padding: 6px var(--s-sm); background: var(--surface-1);
-}
-.review-acts .who { font-size: 10.5px; color: var(--ink-subtle); }
+/* ---- 变更审核 diff ---- */
+.diff { padding: 8px 14px; display: flex; flex-direction: column; gap: 5px; }
+.diff-row { display: grid; grid-template-columns: 76px 1fr; gap: 8px; font-size: 11px; align-items: center; }
+.diff-row .f { font-family: var(--font-mono); color: var(--inksoft); font-size: 10.5px; }
+.diff-old, .diff-new { font-family: var(--font-mono); font-size: 10.5px; padding: 2px 6px; border-radius: 4px; }
+.diff-old { color: var(--inksoft); background: var(--paper); text-decoration: line-through; }
+.diff-new { color: var(--ink); background: rgba(43, 68, 255, .08); border: 1px solid rgba(43, 68, 255, .3); }
+.diff-arrow { color: var(--inksoft); font-size: 10px; }
+.review-acts { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--rule); padding: 7px 14px; background: var(--card); }
+.review-acts .who { font-size: 10.5px; color: var(--inksoft); }
 .review-acts .spacer { flex: 1; }
 
-/* 文件传输进度 */
-.ft { padding: var(--s-sm) var(--s-md); display: flex; flex-direction: column; gap: var(--s-xs); }
-.ft .row { display: flex; align-items: baseline; gap: var(--s-xs); font-size: 11.5px; }
+/* ---- 文件传输 ---- */
+.ft { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.ft .row { display: flex; align-items: baseline; gap: 8px; font-size: 11.5px; }
 .ft .fname { font-family: var(--font-mono); color: var(--ink); font-size: 11.5px; }
-.ft .pct { margin-left: auto; font-family: var(--font-mono); color: var(--primary); font-size: 11.5px; }
-.prog { height: 6px; border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; }
-.prog-fill { height: 100%; width: 68%; border-radius: var(--r-pill); background: var(--primary); }
-.ft-stats { display: flex; gap: var(--s-md); font-size: 10.5px; color: var(--ink-subtle); font-family: var(--font-mono); }
-.ft-stats b { color: var(--ink-muted); font-weight: 500; }
+.ft .pct { margin-left: auto; font-family: var(--font-mono); color: var(--live); font-size: 11.5px; }
+.prog { height: 6px; border-radius: var(--r-pill); background: var(--rule); overflow: hidden; }
+.prog-fill { height: 100%; width: 68%; border-radius: var(--r-pill); background: var(--live); }
+.ft-stats { display: flex; flex-wrap: wrap; gap: 14px; font-size: 10.5px; color: var(--inksoft); font-family: var(--font-mono); }
+.ft-stats b { color: var(--inkmid); font-weight: 500; }
 .ft-log {
-  border-top: 1px solid var(--hairline); padding: 6px var(--s-md);
-  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-subtle);
-  background: var(--surface-1); line-height: 1.7;
+  border-top: 1px solid var(--rule); padding: 7px 14px;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--inksoft);
+  background: var(--paper); line-height: 1.75;
 }
-.ft-log .tx { color: var(--primary); }
+.ft-log .tx { color: var(--live); }
 
-/* 协议预览文档 */
-.doc-mock { padding: var(--s-sm) var(--s-md); font-family: var(--font-mono); font-size: 10.5px; line-height: 1.75; color: var(--ink-subtle); }
-.doc-mock .h { color: var(--ink); font-weight: 600; }
-.doc-mock .k { color: var(--primary); }
-.doc-mock .sep { border-top: 1px solid var(--hairline); margin: 5px 0; }
-.doc-mock .acts { display: flex; gap: var(--s-xs); margin-top: var(--s-xs); }
+/* ---- 协议预览文档 ---- */
+.doc-mock { padding: 10px 14px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.8; color: var(--inkmid); }
+.doc-mock .h { color: var(--ink); font-weight: 700; }
+.doc-mock .k { color: var(--live); }
+.doc-mock .sep { border-top: 1px solid var(--rule); margin: 6px 0; }
+.doc-mock .acts { display: flex; gap: 8px; margin-top: 8px; }
 .doc-chip {
-  font-size: 10px; font-family: var(--font-sans); padding: 2px 8px;
-  border: 1px solid var(--hairline-strong); border-radius: var(--r-xs); color: var(--ink-muted);
+  font-family: var(--font-sans); font-size: 10.5px; font-weight: 500; padding: 3px 9px;
+  border: 1px solid var(--rule); border-radius: 4px; color: var(--inkmid); background: var(--card);
 }
-.doc-chip.pri { color: var(--primary); border-color: rgba(94,106,210,.4); }
+.doc-chip.pri { color: var(--live); border-color: rgba(43, 68, 255, .4); }
 
 /* ==================================================================
-   团队联动演示（动态 · 双端 + 服务器）
+   团队联动演示（双端 + 服务器）
    ================================================================== */
-.flow {
-  display: grid; grid-template-columns: 1fr 156px 1fr;
-  gap: var(--s-md); align-items: stretch; position: relative;
-}
-.flow-col { display: flex; flex-direction: column; gap: var(--s-sm); position: relative; min-width: 0; }
-.flow-tag { display: flex; align-items: center; gap: var(--s-xs); font-size: 12.5px; color: var(--ink-muted); }
+.flow { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: stretch; position: relative; }
+@media (min-width: 960px) { .flow { grid-template-columns: 1fr 156px 1fr; } }
+.flow-col { display: flex; flex-direction: column; gap: 12px; position: relative; min-width: 0; }
+.flow-tag { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--inkmid); }
 .flow-tag .who {
-  width: 20px; height: 20px; border-radius: var(--r-sm); flex: none;
-  display: grid; place-items: center; font-size: 11px; font-weight: 600;
-  background: rgba(94,106,210,.15); border: 1px solid rgba(94,106,210,.4); color: var(--primary);
+  width: 20px; height: 20px; border-radius: 6px; flex: none;
+  display: grid; place-items: center; font-size: 11px; font-weight: 700;
+  background: rgba(43, 68, 255, .1); border: 1px solid rgba(43, 68, 255, .4); color: var(--live);
 }
-.flow-tag .who.b { background: var(--surface-2); border-color: var(--hairline-strong); color: var(--ink-muted); }
-.flow-tag .caption { color: var(--ink-tertiary); font-size: 11.5px; }
+.flow-tag .who.b { background: var(--paper); border-color: var(--rule); color: var(--inkmid); }
+.flow-tag .caption { color: var(--inksoft); font-size: 11.5px; }
 
-/* 中间：服务器节点 + 连接线 + 数据包 */
 .flow-mid { position: relative; display: flex; align-items: center; justify-content: center; }
+@media (min-width: 960px) { .flow-mid { padding: 0; } }
 .flow-mid .line {
-  position: absolute; top: 50%; left: calc(var(--s-md) * -1); right: calc(var(--s-md) * -1); height: 1px;
-  background: repeating-linear-gradient(90deg, var(--hairline-strong) 0 4px, transparent 4px 9px);
+  position: absolute; top: 50%; left: -16px; right: -16px; height: 1px;
+  background: repeating-linear-gradient(90deg, var(--rule) 0 4px, transparent 4px 9px);
 }
+@media (max-width: 959px) { .flow-mid .line, .flow-pkt { display: none; } .flow-mid { padding: 4px 0; } }
 .flow-pkt {
-  position: absolute; top: calc(50% - 3px); left: calc(var(--s-md) * -1);
+  position: absolute; top: calc(50% - 3px); left: -16px;
   width: 7px; height: 7px; border-radius: var(--r-pill);
-  background: var(--primary); box-shadow: 0 0 0 4px rgba(94,106,210,.18);
+  background: var(--live); box-shadow: 0 0 0 4px rgba(43, 68, 255, .15);
   opacity: 0; z-index: 2;
 }
-.flow-pkt.go-a2s { animation: pktA2S 1.05s var(--ease-out) forwards; }
-.flow-pkt.go-s2b { animation: pktS2B 1.05s var(--ease-out) forwards; }
-.flow-pkt.go-back { animation: pktBack 1.3s var(--ease-out) forwards; }
+.flow-pkt.go-a2s { animation: pktA2S 1.05s var(--ease) forwards; }
+.flow-pkt.go-s2b { animation: pktS2B 1.05s var(--ease) forwards; }
+.flow-pkt.go-back { animation: pktBack 1.3s var(--ease) forwards; }
 @keyframes pktA2S { 0% { opacity: 0; transform: translateX(0) } 15% { opacity: 1 } 85% { opacity: 1 } 100% { opacity: 0; transform: translateX(78px) } }
 @keyframes pktS2B { 0% { opacity: 0; transform: translateX(78px) } 15% { opacity: 1 } 85% { opacity: 1 } 100% { opacity: 0; transform: translateX(156px) } }
 @keyframes pktBack { 0% { opacity: 0; transform: translateX(156px) } 15% { opacity: 1 } 85% { opacity: 1 } 100% { opacity: 0; transform: translateX(0) } }
 
 .flow-srv {
   position: relative; z-index: 1; width: 100%;
-  background: var(--surface-1); border: 1px solid var(--hairline);
-  border-radius: var(--r-lg); padding: var(--s-sm);
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-lg); padding: 12px;
   display: flex; flex-direction: column; gap: 5px; align-items: center; text-align: center;
 }
-.flow-srv .ic {
-  width: 32px; height: 32px; border-radius: var(--r-md);
-  background: var(--surface-2); border: 1px solid var(--hairline);
-  display: grid; place-items: center; color: var(--primary);
-}
+.flow-srv .ic { width: 32px; height: 32px; border-radius: var(--r-md); background: rgba(11, 11, 12, .06); display: grid; place-items: center; color: var(--live); }
 .flow-srv .ic svg { width: 16px; height: 16px; }
-.flow-srv .nm { font-size: 12.5px; font-weight: 600; }
-.flow-srv .st { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-subtle); line-height: 1.5; }
-.flow-srv .st b { color: var(--primary); font-weight: 500; }
-.flow-srv .st b.ok { color: var(--semantic-success); }
-.flow-srv .on { font-size: 10px; color: var(--ink-tertiary); display: flex; align-items: center; gap: 5px; }
-.flow-srv .on .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--semantic-success); }
+.flow-srv .nm { font-size: 12.5px; font-weight: 700; }
+.flow-srv .st { font-family: var(--font-mono); font-size: 10.5px; color: var(--inkmid); line-height: 1.5; }
+.flow-srv .st b { color: var(--live); font-weight: 500; }
+.flow-srv .st b.ok { color: #147a34; }
+.flow-srv .on { font-size: 10px; color: var(--inksoft); display: flex; align-items: center; gap: 5px; }
+.flow-srv .on .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: #27a644; }
 
-/* 客户端窗口内容：编辑器 / 审核 */
-.fedit { padding: var(--s-xs) var(--s-sm); display: flex; flex-direction: column; gap: 5px; }
-.fedit .r { display: flex; align-items: center; gap: var(--s-xs); font-size: 11px; border-radius: var(--r-xs); padding: 2px 4px; margin: 0 -4px; }
-.fedit .r .k { color: var(--ink-tertiary); width: 62px; flex: none; font-family: var(--font-mono); font-size: 10.5px; }
-.fedit .r .v { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-muted); }
-.fedit .r .v del { color: var(--ink-tertiary); }
-.fedit .r .v ins { text-decoration: none; color: var(--ink); background: rgba(94,106,210,.16); border-radius: 3px; padding: 0 4px; }
-.fedit .acts {
-  display: flex; gap: var(--s-xs); align-items: center;
-  border-top: 1px solid var(--hairline); padding: 6px var(--s-sm); background: var(--surface-1);
-}
+/* 客户端窗口：编辑 / 审核 */
+.fedit { padding: 8px 14px; display: flex; flex-direction: column; gap: 5px; }
+.fedit .r { display: flex; align-items: center; gap: 8px; font-size: 11px; border-radius: 4px; padding: 3px 4px; margin: 0 -4px; }
+.fedit .r .k { color: var(--inksoft); width: 62px; flex: none; font-family: var(--font-mono); font-size: 10.5px; }
+.fedit .r .v { font-family: var(--font-mono); font-size: 10.5px; color: var(--inkmid); }
+.fedit .r .v del { color: var(--inksoft); }
+.fedit .r .v ins { text-decoration: none; color: var(--ink); background: rgba(43, 68, 255, .12); border-radius: 3px; padding: 0 4px; }
+.fedit .acts { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--rule); padding: 7px 14px; background: var(--card); }
 .fedit .acts .spacer { flex: 1; }
-.fedit .acts .hint { font-size: 10.5px; color: var(--ink-tertiary); }
-.fhl { transition: background-color var(--dur-med) var(--ease-out), box-shadow var(--dur-med) var(--ease-out); }
-.fhl.on { background: rgba(94,106,210,.1); box-shadow: inset 0 0 0 1px rgba(94,106,210,.45); }
+.fedit .acts .hint { font-size: 10.5px; color: var(--inksoft); }
+.fhl { transition: background-color var(--dur-med) var(--ease), box-shadow var(--dur-med) var(--ease); }
+.fhl.on { background: rgba(43, 68, 255, .07); box-shadow: inset 0 0 0 1px rgba(43, 68, 255, .4); }
 .flow-pulse { animation: flowPulse 1.5s ease-in-out infinite; }
-@keyframes flowPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(94,106,210,.4); }
-  50% { box-shadow: 0 0 0 5px rgba(94,106,210,.12); }
-}
+@keyframes flowPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(43, 68, 255, .35); } 50% { box-shadow: 0 0 0 5px rgba(43, 68, 255, .12); } }
 
 /* 状态行 + Toast */
-.flow-status {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11.5px; color: var(--ink-subtle);
-}
-.flow-status .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--ink-tertiary); flex: none; }
-.flow-status.wait .dot { background: var(--primary); }
-.flow-status.done .dot { background: var(--semantic-success); }
-.flow-status b { color: var(--ink); font-weight: 500; }
+.flow-status { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--inkmid); }
+.flow-status .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--inksoft); flex: none; }
+.flow-status.wait .dot { background: var(--live); }
+.flow-status.done .dot { background: #27a644; }
+.flow-status b { color: var(--ink); font-weight: 600; }
 .flow-toast {
   position: absolute; left: 50%; bottom: -14px; z-index: 3;
   transform: translate(-50%, 8px); opacity: 0; pointer-events: none;
   display: flex; align-items: center; gap: 7px; white-space: nowrap;
-  background: var(--surface-2); border: 1px solid var(--hairline-strong);
+  background: var(--card); border: 1px solid var(--rule);
   border-radius: var(--r-pill); padding: 6px 14px;
   font-size: 11.5px; color: var(--ink);
-  box-shadow: 0 10px 28px rgba(0,0,0,.55);
-  transition: opacity var(--dur-med) var(--ease-out), transform var(--dur-med) var(--ease-out);
+  box-shadow: 0 10px 26px rgba(11, 11, 12, .14);
+  transition: opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease);
 }
-.flow-toast .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--primary); flex: none; }
-.flow-toast.ok .dot { background: var(--semantic-success); }
+.flow-toast .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--live); flex: none; }
+.flow-toast.ok .dot { background: #27a644; }
 .flow-toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 959px) { .flow-toast { position: static; transform: none; opacity: 1; display: none; margin-top: 2px; } .flow-toast.show { display: inline-flex; transform: none; } }
 
-/* 步骤时间线 */
-.flow-steps { margin-top: var(--s-xl); display: flex; align-items: center; gap: var(--s-xs); flex-wrap: wrap; }
+/* 步骤控制 */
+.flow-steps { margin-top: 32px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .flow-step {
   display: inline-flex; align-items: center; gap: 7px;
-  font-size: 12.5px; color: var(--ink-subtle);
-  background: var(--surface-1); border: 1px solid var(--hairline);
-  border-radius: var(--r-pill); padding: 6px 13px; cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  font-size: 12.5px; color: var(--inkmid);
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-pill); padding: 7px 14px;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
 }
-.flow-step .n { font-family: var(--font-mono); font-size: 11px; color: var(--ink-tertiary); }
-.flow-step:hover { color: var(--ink-muted); border-color: var(--hairline-strong); }
-.flow-step.active { color: var(--ink); border-color: rgba(94,106,210,.5); background: rgba(94,106,210,.1); }
-.flow-step.active .n { color: var(--primary); }
-.flow-step.done .n { color: var(--semantic-success); }
-.flow-ctrl { display: flex; gap: var(--s-xs); margin-left: auto; }
-.flow-ctrl .btn { cursor: pointer; }
+.flow-step .n { font-family: var(--font-mono); font-size: 11px; color: var(--inksoft); }
+.flow-step:hover { color: var(--inkmid); border-color: #c6c6c6; }
+.flow-step.active { color: var(--ink); border-color: rgba(43, 68, 255, .5); background: rgba(43, 68, 255, .07); }
+.flow-step.active .n { color: var(--live); }
+.flow-step.done .n { color: #147a34; }
+.flow-ctrl { display: flex; gap: 8px; margin-left: auto; }
 .flow-caption {
-  margin-top: var(--s-sm); font-size: 13px; color: var(--ink-muted); line-height: 1.6;
-  border-left: 2px solid var(--primary); padding-left: var(--s-sm); min-height: 21px;
+  margin-top: 14px; font-size: 13.5px; color: var(--inkmid); line-height: 1.7;
+  border-left: 2px solid var(--live); padding-left: 14px; min-height: 22px;
 }
-.flow-caption b { color: var(--ink); font-weight: 500; }
+.flow-caption b { color: var(--ink); font-weight: 600; }
 
-@media (max-width: 960px) {
-  .flow { grid-template-columns: 1fr; }
-  .flow-mid { padding: var(--s-xs) 0; }
-  .flow-mid .line, .flow-pkt { display: none; }
-  .flow-srv { max-width: 320px; }
-  .flow-toast { position: static; transform: none; opacity: 1; display: none; margin-top: 2px; }
-  .flow-toast.show { display: inline-flex; transform: none; }
+/* ==================================================================
+   应用场景 — 编号行
+   ================================================================== */
+.usecase { display: flex; gap: 16px; align-items: flex-start; }
+.usecase .no { font-family: var(--font-mono); font-size: 13px; font-weight: 500; letter-spacing: .14em; color: var(--live); padding-top: 3px; flex: none; }
+
+/* ==================================================================
+   下载 — 深色大卡 + 双平台卡
+   ================================================================== */
+.dl-platform-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 40px; }
+@media (min-width: 768px) { .dl-platform-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.dl-platform-card {
+  display: flex; flex-direction: column; gap: 18px;
+  background: rgba(242, 242, 242, .07); border-radius: var(--r-xl); padding: 26px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .flow-pkt, .fhl, .flow-toast, .flow-pulse { animation: none !important; transition: none !important; }
+.dl-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.dl-card-top .name { font-family: var(--font-cn); font-size: 1.5rem; font-weight: 700; }
+.dl-card-top .status { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .16em; color: var(--livelight); white-space: nowrap; }
+.dl-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.dl-actions .btn { align-self: flex-start; }
+.dl-actions .link-under { color: rgba(242, 242, 242, .7); }
+.dl-actions .link-under:hover { color: var(--paper); }
+.dl-meta { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 11.5px; color: rgba(242, 242, 242, .62); }
+.dl-meta div { display: flex; gap: 12px; }
+.dl-meta dt { width: 7.5rem; flex: none; }
+.dl-meta dd { color: rgba(242, 242, 242, .7); word-break: break-all; }
+.dark-foot {
+  border-top: 1px solid rgba(242, 242, 242, .1); margin-top: 28px; padding-top: 26px;
+  font-size: 12.5px; line-height: 1.75; color: rgba(242, 242, 242, .62);
+}
+
+/* 四步安装 — gap-px 细线网格（SkillDeck 签名样式） */
+.steps-grid {
+  display: grid; grid-template-columns: 1fr; gap: 1px;
+  overflow: hidden; border-radius: var(--r-2xl); background: var(--rule);
+  border: 1px solid var(--rule); margin-top: 40px;
+}
+@media (min-width: 640px) { .steps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .steps-grid.steps-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.step-cell { display: flex; flex-direction: column; gap: 14px; background: var(--card); padding: 30px; }
+.step-cell .n { font-family: var(--font-mono); font-size: 13px; letter-spacing: .14em; color: var(--live); }
+.step-cell h3 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.01em; }
+.step-cell p { font-size: 15px; line-height: 1.7; color: var(--inkmid); }
+.step-cell .mono { font-family: var(--font-mono); font-size: 13px; color: var(--ink); }
+.step-cell .req { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.step-cell .req span {
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--inkmid);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 3px 8px;
 }
 
 /* ==================================================================
-   应用场景
+   文档卡 — 展开摘要
    ================================================================== */
-.usecase { display: flex; gap: var(--s-md); align-items: flex-start; }
-.usecase .no {
-  font-family: var(--font-mono); font-size: 13px; color: var(--primary);
-  padding-top: 2px; flex: none;
-}
-
-/* ==================================================================
-   下载区
-   ================================================================== */
-.download-grid { display: grid; grid-template-columns: 5fr 7fr; gap: var(--s-md); align-items: stretch; }
-.download-card {
-  background: var(--surface-1); border: 1px solid var(--hairline);
-  border-radius: var(--r-lg); padding: var(--s-xl);
-  display: flex; flex-direction: column; position: relative; overflow: hidden;
-}
-.download-card::before {
-  content: ""; position: absolute; top: 0; left: 24px; right: 24px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
-}
-.dl-platform { display: flex; align-items: center; gap: var(--s-sm); margin-bottom: var(--s-md); }
-.dl-platform .os-icon {
-  width: 40px; height: 40px; border-radius: var(--r-md);
-  background: var(--surface-2); border: 1px solid var(--hairline);
-  display: grid; place-items: center; color: var(--ink);
-}
-.dl-platform .os-icon svg { width: 20px; height: 20px; }
-.dl-platform h3 { font-size: 18px; font-weight: 600; letter-spacing: -.3px; }
-.dl-platform .caption { display: block; margin-top: 1px; }
-.dl-file {
-  background: var(--canvas); border: 1px solid var(--hairline);
-  border-radius: var(--r-md); padding: var(--s-sm) var(--s-md);
-  margin-bottom: var(--s-md);
-}
-.dl-file .fname { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); word-break: break-all; }
-.dl-file .fmeta { display: flex; flex-wrap: wrap; gap: var(--s-xs) var(--s-md); margin-top: 6px; }
-.dl-file .fmeta span { font-size: 12px; color: var(--ink-subtle); display: inline-flex; align-items: center; gap: 5px; }
-.dl-file .fmeta svg { width: 12px; height: 12px; color: var(--ink-tertiary); }
-.dl-actions { display: flex; flex-direction: column; gap: var(--s-xs); margin-top: auto; }
-.dl-actions .btn { width: 100%; }
-.dl-note { font-size: 12px; color: var(--ink-tertiary); text-align: center; margin-top: var(--s-xs); }
-.dl-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-md); margin-bottom: var(--s-md); }
-
-.install-steps { display: flex; flex-direction: column; gap: var(--s-md); }
-.install-step { display: flex; gap: var(--s-md); }
-.install-step .n {
-  width: 24px; height: 24px; flex: none; border-radius: var(--r-pill);
-  border: 1px solid var(--hairline-strong); background: var(--surface-2);
-  display: grid; place-items: center;
-  font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted);
-}
-.install-step h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-.install-step p { font-size: 13px; color: var(--ink-subtle); }
-.install-step .req { display: flex; flex-wrap: wrap; gap: var(--s-xs); margin-top: var(--s-xs); }
-.install-step .req span {
-  font-size: 12px; color: var(--ink-muted); background: var(--surface-2);
-  border: 1px solid var(--hairline); border-radius: var(--r-xs); padding: 2px 8px;
-}
-
-/* ==================================================================
-   文档区
-   ================================================================== */
-.doc-card { display: flex; flex-direction: column; gap: var(--s-sm); min-height: 148px; }
+.doc-card { display: flex; flex-direction: column; gap: 12px; min-height: 150px; }
 .doc-card .doc-top { display: flex; align-items: center; justify-content: space-between; }
-.doc-card .doc-kind { font-family: var(--font-mono); font-size: 11px; color: var(--ink-tertiary); }
-.doc-card .doc-link { font-size: 13px; font-weight: 500; color: var(--primary); display: inline-flex; align-items: center; gap: 4px; margin-top: auto; background: none; border: none; padding: 0; cursor: pointer; font-family: var(--font-sans); }
-.doc-card .doc-link svg { width: 14px; height: 14px; transition: transform var(--dur-fast) var(--ease-out); }
+.doc-card .card-icon { margin-bottom: 0; }
+.doc-card .doc-kind { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; color: var(--inksoft); }
+.doc-card .doc-link {
+  font-size: 13px; font-weight: 600; color: var(--live);
+  display: inline-flex; align-items: center; gap: 5px; margin-top: auto;
+  text-align: left; padding: 0;
+}
+.doc-card .doc-link svg { width: 14px; height: 14px; transition: transform var(--dur-fast) var(--ease); }
 .doc-card.open .doc-link svg { transform: rotate(90deg); }
-.doc-abstract { font-size: 13px; color: var(--ink-subtle); line-height: 1.7; border-top: 1px solid var(--hairline); padding-top: var(--s-sm); }
+.doc-abstract { font-size: 13.5px; color: var(--inkmid); line-height: 1.75; border-top: 1px solid var(--rule); padding-top: 12px; }
 .doc-abstract[hidden] { display: none; }
 .docs-all {
-  margin-top: var(--s-md);
-  display: flex; align-items: center; justify-content: space-between; gap: var(--s-md);
-  background: var(--surface-1); border: 1px solid var(--hairline);
-  border-radius: var(--r-lg); padding: var(--s-md) var(--s-lg);
+  margin-top: 16px; display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-xl); padding: 18px 26px;
 }
-.docs-all p { font-size: 14px; color: var(--ink-subtle); }
+.docs-all p { font-size: 14.5px; color: var(--inkmid); }
 
 /* ==================================================================
-   反馈区
+   反馈 — 渠道 + 表单
    ================================================================== */
-.feedback-grid { display: grid; grid-template-columns: 5fr 7fr; gap: var(--s-md); align-items: start; }
-.channel { display: flex; gap: var(--s-md); align-items: flex-start; padding: var(--s-md) var(--s-lg); }
-.channel + .channel { margin-top: var(--s-sm); }
+.feedback-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+@media (min-width: 1024px) { .feedback-grid { grid-template-columns: 5fr 7fr; } }
+.channel { display: flex; gap: 16px; align-items: flex-start; padding: 18px 26px; }
+.channel + .channel { margin-top: 12px; }
 .channel .card-icon { margin-bottom: 0; flex: none; }
-.channel h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-.channel p { font-size: 13px; color: var(--ink-subtle); margin-bottom: var(--s-xs); }
-.channel .ch-link { font-size: 13px; color: var(--primary); display: inline-flex; align-items: center; gap: 4px; }
+.channel h3 { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+.channel p { font-size: 13.5px; line-height: 1.65; color: var(--inkmid); margin-bottom: 6px; }
+.channel .ch-link { font-size: 13.5px; font-weight: 600; color: var(--live); display: inline-flex; align-items: center; gap: 4px; }
 .channel .ch-link svg { width: 13px; height: 13px; }
 
-.fb-form { padding: var(--s-xl); }
-.fb-form h3 { font-size: 18px; font-weight: 600; letter-spacing: -.3px; margin-bottom: var(--s-xxs); }
-.fb-form .fb-sub { font-size: 13px; color: var(--ink-subtle); margin-bottom: var(--s-lg); }
-.fb-types { display: flex; flex-wrap: wrap; gap: var(--s-xs); margin-bottom: var(--s-md); }
+.fb-form { padding: 32px; }
+.fb-form h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+.fb-form .fb-sub { font-size: 13.5px; color: var(--inkmid); margin-bottom: 24px; }
+.fb-types { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .fb-type {
-  font-size: 13px; color: var(--ink-subtle);
-  background: var(--canvas); border: 1px solid var(--hairline);
-  border-radius: var(--r-pill); padding: 6px 14px; cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
+  font-size: 13.5px; color: var(--inkmid);
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: var(--r-pill); padding: 7px 15px;
+  transition: all var(--dur-fast) var(--ease);
 }
-.fb-type:hover { color: var(--ink); border-color: var(--hairline-strong); }
-.fb-type.selected { background: var(--surface-2); color: var(--ink); border-color: var(--hairline-strong); }
-.fb-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-sm); }
-.fb-field { margin-bottom: var(--s-sm); }
-.fb-field label { display: block; font-size: 13px; color: var(--ink-muted); margin-bottom: 6px; }
+.fb-type:hover { color: var(--ink); border-color: #c6c6c6; }
+.fb-type.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.fb-row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .fb-row { grid-template-columns: 1fr 1fr; } }
+.fb-field { margin-bottom: 12px; }
+.fb-field label { display: block; font-size: 13px; font-weight: 500; color: var(--inkmid); margin-bottom: 6px; }
 .fb-field input, .fb-field textarea, .fb-field select {
-  width: 100%; background: var(--surface-1); color: var(--ink);
-  border: 1px solid var(--hairline); border-radius: var(--r-md);
-  padding: 8px 12px; font-family: var(--font-sans); font-size: 14px;
-  transition: border-color var(--dur-fast) var(--ease-out);
+  width: 100%; background: var(--card); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--r-md);
+  padding: 10px 13px; font-family: var(--font-sans); font-size: 14px;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
-.fb-field textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
-.fb-field input::placeholder, .fb-field textarea::placeholder { color: var(--ink-tertiary); }
+.fb-field textarea { min-height: 110px; resize: vertical; line-height: 1.65; }
+.fb-field input::placeholder, .fb-field textarea::placeholder { color: var(--inksoft); }
 .fb-field input:focus, .fb-field textarea:focus, .fb-field select:focus {
-  outline: none; border-color: var(--primary-focus);
-  box-shadow: 0 0 0 2px rgba(94,105,209,.35);
+  outline: none; border-color: var(--live);
+  box-shadow: 0 0 0 3px rgba(43, 68, 255, .16);
 }
-.fb-submit { display: flex; align-items: center; gap: var(--s-md); margin-top: var(--s-md); }
-.fb-submit .caption { flex: 1; }
+.fb-submit { display: flex; align-items: center; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+.fb-submit .caption { flex: 1; min-width: 160px; }
 
 /* ==================================================================
-   FAQ
+   FAQ — 手风琴（details + 加号/减号）
    ================================================================== */
 .faq-list { max-width: 760px; }
-.faq-item { border-bottom: 1px solid var(--hairline); }
+.faq-item { border-top: 1px solid var(--rule); }
+.faq-item:last-child { border-bottom: 1px solid var(--rule); }
 .faq-item summary {
   list-style: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: space-between; gap: var(--s-md);
-  padding: var(--s-md) var(--s-xxs);
-  font-size: 15px; font-weight: 500; color: var(--ink);
-  transition: color var(--dur-fast) var(--ease-out);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 22px 0;
+  font-size: 17px; font-weight: 600; color: var(--ink);
+  transition: color var(--dur-fast) var(--ease);
 }
+@media (min-width: 768px) { .faq-item summary { font-size: 20px; } }
 .faq-item summary::-webkit-details-marker { display: none; }
-.faq-item summary:hover { color: var(--primary); }
-.faq-item summary svg {
-  width: 16px; height: 16px; color: var(--ink-subtle); flex: none;
-  transition: transform var(--dur-med) var(--ease-out);
-}
-.faq-item[open] summary svg { transform: rotate(180deg); }
-.faq-item .faq-body { padding: 0 var(--s-xxs) var(--s-md); }
-.faq-item .faq-body p { font-size: 14px; color: var(--ink-subtle); max-width: 640px; }
+.faq-item summary:hover { color: var(--live); }
+.faq-icon { position: relative; width: 16px; height: 16px; flex: none; }
+.faq-icon::before, .faq-icon::after { content: ""; position: absolute; background: var(--ink); transition: transform 300ms var(--ease), opacity 300ms var(--ease); }
+.faq-icon::before { top: 50%; left: 0; width: 16px; height: 1.5px; transform: translateY(-50%); }
+.faq-icon::after { top: 0; left: 50%; width: 1.5px; height: 16px; transform: translateX(-50%); }
+.faq-item[open] .faq-icon::after { transform: translateX(-50%) rotate(90deg); opacity: 0; }
+.faq-body { padding-bottom: 24px; }
+.faq-body p { font-size: 15.5px; line-height: 1.75; color: var(--inkmid); max-width: 62ch; }
 
 /* ==================================================================
-   CTA banner — DESIGN.md components.cta-banner
+   结尾 CTA — 居中
    ================================================================== */
-.cta-banner {
-  background: var(--surface-1); border: 1px solid var(--hairline);
-  border-radius: var(--r-lg); padding: var(--s-xxl);
-  display: flex; align-items: center; justify-content: space-between;
-  gap: var(--s-xl); flex-wrap: wrap;
-  position: relative; overflow: hidden;
-}
-.cta-banner::before {
-  content: ""; position: absolute; top: 0; left: 24px; right: 24px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
-}
-.cta-banner h2 { font-size: 28px; font-weight: 600; letter-spacing: -.6px; margin-bottom: var(--s-xs); }
-.cta-banner p { font-size: 15px; color: var(--ink-subtle); }
-.cta-banner .btn { flex: none; }
-
+.cta-final { display: flex; flex-direction: column; align-items: center; gap: 24px; text-align: center; }
+.cta-final h2 { font-size: clamp(2rem, 4.6vw, 3.25rem); font-weight: 800; line-height: 1.2; letter-spacing: -.015em; max-width: 18ch; }
+.cta-final p { font-size: 17px; line-height: 1.65; color: var(--inkmid); max-width: 44ch; }
+.cta-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 4px; }
 /* ==================================================================
-   Footer — DESIGN.md components.footer
+   Footer
    ================================================================== */
-.footer { border-top: 1px solid var(--hairline); padding: var(--s-xxl) var(--s-xl) var(--s-lg); margin-top: var(--s-section); }
-.footer-inner { max-width: var(--container); margin: 0 auto; }
-.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--s-xl); margin-bottom: var(--s-xxl); }
-.footer-brand p { font-size: 13px; color: var(--ink-subtle); max-width: 280px; margin: var(--s-sm) 0 var(--s-md); }
-.footer h5 { font-size: 13px; font-weight: 500; color: var(--ink-muted); margin-bottom: var(--s-sm); }
-.footer li { margin-bottom: var(--s-xs); }
-.footer li a { font-size: 13px; color: var(--ink-subtle); transition: color var(--dur-fast) var(--ease-out); }
-.footer li a:hover { color: var(--ink); }
+.footer { border-top: 1px solid var(--rule); background: var(--paper); }
+.footer-inner { max-width: var(--container); margin: 0 auto; padding: 56px 24px 40px; }
+@media (min-width: 768px) { .footer-inner { padding: 64px 40px 44px; } }
+.footer-top { display: flex; flex-direction: column; gap: 44px; margin-bottom: 48px; }
+@media (min-width: 768px) { .footer-top { flex-direction: row; justify-content: space-between; } }
+.footer-brand { display: flex; flex-direction: column; gap: 16px; max-width: 30ch; }
+.footer-brand p { font-size: 15px; line-height: 1.65; color: var(--inkmid); }
+.footer-cols { display: flex; gap: 56px; flex-wrap: wrap; }
+.footer-col { display: flex; flex-direction: column; gap: 16px; }
+.footer-col .label {
+  font-family: var(--font-mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .22em; color: var(--inksoft);
+}
+.footer-col .links { display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: var(--inkmid); }
+.footer-col .links a { transition: color var(--dur-fast) var(--ease); }
+.footer-col .links a:hover { color: var(--ink); }
 .footer-bottom {
-  border-top: 1px solid var(--hairline); padding-top: var(--s-lg);
-  display: flex; flex-wrap: wrap; gap: var(--s-sm); align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--rule); padding-top: 30px;
+  display: flex; flex-direction: column; gap: 8px;
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--inksoft);
 }
-.footer-bottom .caption { font-size: 12px; color: var(--ink-tertiary); }
+@media (min-width: 768px) { .footer-bottom { flex-direction: row; align-items: center; justify-content: space-between; } }
 
 /* ==================================================================
-   Reveal 动效（克制）
+   动效 — 首屏错峰 rise + 滚动 reveal（SkillDeck）
    ================================================================== */
-.reveal { opacity: 0; transform: translateY(14px); transition: opacity .5s var(--ease-out), transform .5s var(--ease-out); }
+@keyframes sd-rise { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: none; } }
+.sd-rise { animation: .85s var(--ease) both sd-rise; }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
 .reveal.in { opacity: 1; transform: none; }
+
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
-  .app-terminal .cursor { animation: none; }
   html { scroll-behavior: auto; }
+  .reveal, .sd-rise { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; }
+  .flow-pkt, .fhl, .flow-toast, .flow-pulse, .app-terminal .cursor { animation: none !important; transition: none !important; }
+  .btn:hover { transform: none; }
 }
 
 /* ==================================================================
-   响应式 — DESIGN.md Responsive Behavior
+   响应式
    ================================================================== */
-@media (min-width: 1560px) {
-  .callout { display: block; }
+@media (max-width: 767px) {
+  .hero { min-height: 0; gap: 40px; padding: 40px 0 56px; }
+  .section { padding: 48px 0; }
+  .dark-card { border-radius: var(--r-2xl); padding: 32px 22px; }
+  .step-cell { padding: 24px; }
+  .fb-form { padding: 24px; }
+  .display-lg, .display-md { letter-spacing: -.01em; }
+  .flow-ctrl { margin-left: 0; }
+  .dl-card-top { flex-wrap: wrap; }
+  .footer-cols { gap: 32px; }
 }
-@media (max-width: 1559px) {
-  .callout { display: none; }
+@media (max-width: 420px) {
+  .btn, .btn-lg { width: 100%; }
+  .hero-cta { width: 100%; flex-direction: column; align-items: stretch; }
+  .hero-cta-group { width: 100%; }
 }
-@media (max-width: 1024px) {
-  .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .download-grid, .dl-cards, .feedback-grid { grid-template-columns: 1fr; }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 768px) {
-  :root { --s-section: 64px; }
-  .container { padding: 0 var(--s-md); }
-  .nav-links { display: none; }
-  .nav-links.open {
-    display: flex; flex-direction: column; align-items: stretch;
-    position: fixed; top: var(--nav-h); left: 0; right: 0;
-    background: var(--surface-1); border-bottom: 1px solid var(--hairline);
-    padding: var(--s-sm); gap: 2px;
-  }
-  .nav-links.open a { padding: 10px 12px; font-size: 15px; }
-  .nav-burger { display: grid; }
-  .nav-inner { gap: var(--s-sm); }
-  .nav-actions .btn-primary { display: none; }
-  .brand small { display: none; }
-  .hero { padding: calc(var(--nav-h) + 56px) 0 48px; }
-  .display-lg { font-size: 36px; letter-spacing: -1.2px; }
-  .display-md { font-size: 28px; letter-spacing: -.6px; }
-  .subhead { font-size: 17px; }
-  .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; }
-  .mock-grid { grid-template-columns: 1fr; }
-  .fb-row { grid-template-columns: 1fr; }
-  .cta-banner { padding: var(--s-xl); }
-  .cta-banner .btn { width: 100%; }
-  .footer-grid { grid-template-columns: 1fr; gap: var(--s-lg); }
-  .app-sidebar { display: none; }
-  .app-body { min-height: 340px; }
-  .docs-all { flex-direction: column; align-items: flex-start; }
-}
+
 </style>
 </head>
 <body>
-
-<!-- ===== Icon Sprite（取自 assets/sprite.svg · 24×24 · stroke 1.75） ===== -->
+<!-- ===== Icon Sprite（24×24 · stroke 1.75） ===== -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
   <defs>
     <symbol id="i-workspace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></symbol>
@@ -961,21 +893,13 @@ svg { display: block; }
     <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15 A1.65 1.65 0 0 0 18 15.34 A1.65 1.65 0 0 0 17 16.3 A1.65 1.65 0 0 0 17 17.65 A1.65 1.65 0 0 0 18 18.6 L18 21"/><path d="M19.4 9 A1.65 1.65 0 0 1 18 8.66 A1.65 1.65 0 0 1 17 7.7 A1.65 1.65 0 0 1 17 6.35 A1.65 1.65 0 0 1 18 5.4 L18 3"/><path d="M4.6 15 A1.65 1.65 0 0 1 6 15.34 A1.65 1.65 0 0 1 7 16.3 A1.65 1.65 0 0 1 7 17.65 A1.65 1.65 0 0 1 6 18.6 L6 21"/><path d="M4.6 9 A1.65 1.65 0 0 0 6 8.66 A1.65 1.65 0 0 0 7 7.7 A1.65 1.65 0 0 0 7 6.35 A1.65 1.65 0 0 0 6 5.4 L6 3"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2.5 L2.5 9.5 L11 13 L13.5 21.5 Z"/><path d="M21.5 2.5 L11 13"/></symbol>
     <symbol id="i-loop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12 A8 8 0 1 1 16.5 6"/><path d="M16.5 3 L16.5 7 L13 7"/></symbol>
-    <!-- Windows logo（下载平台标识） -->
     <symbol id="i-windows" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 5.5 L10.2 4.6 L10.2 11.2 L3 11.2 Z"/><path d="M11.5 4.4 L21 3 L21 11.2 L11.5 11.2 Z"/><path d="M3 12.8 L10.2 12.8 L10.2 19.4 L3 18.5 Z"/><path d="M11.5 12.8 L21 12.8 L21 21 L11.5 19.6 Z"/></symbol>
-    <!-- 代码仓库 -->
     <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
-    <!-- Mail -->
     <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7 L12 13 L21 7"/></symbol>
-    <!-- Download -->
     <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L12 15"/><path d="M7 10 L12 15 L17 10"/><path d="M4 19 L20 19"/></symbol>
-    <!-- Menu -->
     <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 L20 7"/><path d="M4 12 L20 12"/><path d="M4 17 L20 17"/></symbol>
-    <!-- Sparkle（AI） -->
     <symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L13.8 9.2 L20 11 L13.8 12.8 L12 19 L10.2 12.8 L4 11 L10.2 9.2 Z"/><path d="M18.5 16.5 L19.2 18.8 L21.5 19.5 L19.2 20.2 L18.5 22.5 L17.8 20.2 L15.5 19.5 L17.8 18.8 Z"/></symbol>
-    <!-- CPU -->
     <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2 L9 5 M15 2 L15 5 M9 19 L9 22 M15 19 L15 22 M2 9 L5 9 M2 15 L5 15 M19 9 L22 9 M19 15 L22 15"/></symbol>
-    <!-- External link -->
     <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4 L20 4 L20 10"/><path d="M20 4 L11 13"/><path d="M18 14 L18 19 C18 19.55 17.55 20 17 20 L5 20 C4.45 20 4 19.55 4 19 L4 7 C4 6.45 4.45 6 5 6 L10 6"/></symbol>
   </defs>
 </svg>
@@ -984,22 +908,24 @@ svg { display: block; }
 <nav class="nav" id="nav">
   <div class="nav-inner">
     <a class="brand" href="#top">
-      <span class="brand-mark"><svg><use href="#i-serial"/></svg></span>
-      波特律动 <small>BaudLab</small>
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#2b44ff"/><path d="M3.5 12 L6.5 12 L6.5 7 L9.5 7 L9.5 17 L12.5 17 L12.5 9.5 L15.5 9.5 L15.5 12 L20.5 12" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-name">BaudLab<small>波特律动</small></span>
     </a>
     <div class="nav-links" id="navLinks">
-      <a href="#features">功能特性</a>
-      <a href="#preview">产品预览</a>
+      <a href="#features">功能</a>
+      <a href="#preview">预览</a>
       <a href="#workflow">团队联动</a>
-      <a href="#usecases">应用场景</a>
+      <a href="#usecases">场景</a>
       <a href="#download">下载</a>
       <a href="#docs">文档</a>
-      <a href="#feedback">反馈</a>
+      <a href="#faq">常见问题</a>
     </div>
     <div class="nav-actions">
-      <a class="nav-icon-link" href="https://github.com/ALVAN-1/BaudLab.io" target="_blank" rel="noopener" aria-label="GitHub 仓库"><svg><use href="#i-github"/></svg></a>
-      <a class="btn btn-primary" href="#download"><svg><use href="#i-download"/></svg>免费下载</a>
-      <button class="btn btn-ghost nav-burger" id="burger" aria-label="菜单"><svg><use href="#i-menu"/></svg></button>
+      <a class="nav-pill" href="https://github.com/ALVAN-1/BaudLab.io" target="_blank" rel="noopener" aria-label="GitHub 仓库"><svg><use href="#i-github"/></svg>GitHub</a>
+      <a class="nav-pill" href="#download"><svg><use href="#i-download"/></svg>下载</a>
+      <button class="nav-burger" id="burger" aria-label="菜单"><svg><use href="#i-menu"/></svg></button>
     </div>
   </div>
 </nav>
@@ -1007,33 +933,110 @@ svg { display: block; }
 <main id="top">
 
 <!-- ===== Hero ===== -->
-<section class="hero">
-  <div class="container">
-    <div class="hero-badge">
-      <span class="badge badge-primary"><span class="dot"></span>波特律动 BaudLab · <span data-ver>v1.0.0</span> 稳定版 · <span data-date>2026-10-13</span> 发布</span>
-    </div>
-    <h1 class="display-lg">串口协议<br>一站式管理与调试</h1>
-    <p class="subhead lede">从协议配置、信号监控到实时调试、文件传输——六大工作区覆盖嵌入式开发全流程。本地优先设计，所有协议数据始终留在你的机器上。</p>
-    <div class="hero-cta">
+<section class="hero container">
+  <div class="hero-head">
+    <svg class="hero-mark sd-rise" viewBox="0 0 24 24" aria-hidden="true">
+      <rect width="24" height="24" rx="6" fill="#2b44ff"/>
+      <path d="M3.5 12 L6.5 12 L6.5 7 L9.5 7 L9.5 17 L12.5 17 L12.5 9.5 L15.5 9.5 L15.5 12 L20.5 12" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1 class="sd-rise" style="animation-delay:.05s">串口协议，<br>一站式管理与调试</h1>
+    <p class="lede sd-rise" style="animation-delay:.13s">从协议配置、信号监控到实时调试、文件传输——六大工作区覆盖嵌入式开发全流程。本地优先设计，所有协议数据始终留在你的机器上。</p>
+    <p class="hero-meta sd-rise" style="animation-delay:.17s">当前版本 <span data-ver>v1.0.0</span> · <span data-date>2026-10-13</span> 发布 · Windows 10/11 x64 · 免费开源 · MIT License</p>
+    <div class="hero-cta sd-rise" style="animation-delay:.21s">
       <a class="btn btn-primary btn-lg" href="#download"><svg><use href="#i-download"/></svg>免费下载 Windows 版</a>
       <a class="btn btn-secondary btn-lg" href="#docs"><svg><use href="#i-file-text"/></svg>查看文档</a>
     </div>
-    <div class="hero-meta">
-      <span><svg><use href="#i-check"/></svg>Windows 10 / 11 · x64</span>
-      <span><svg><use href="#i-check"/></svg>安装包 65.4 MB</span>
-      <span><svg><use href="#i-check"/></svg>免费使用</span>
-      <span><svg><use href="#i-check"/></svg>MIT License</span>
+  </div>
+
+  <div class="hero-visual sd-rise" style="animation-delay:.29s">
+    <div class="preview-wrap">
+      <div class="screenshot">
+        <div class="app-window">
+          <div class="app-titlebar">
+            <div class="app-dots"><i></i><i></i><i></i></div>
+            <span class="title">BaudLab — 协议配置</span>
+            <div class="app-dots" style="visibility:hidden"><i></i><i></i><i></i></div>
+          </div>
+          <div class="app-body">
+            <aside class="app-sidebar">
+              <span class="si" title="串口通信"><svg><use href="#i-serial"/></svg></span>
+              <span class="si active" title="协议配置"><svg><use href="#i-protocol"/></svg></span>
+              <span class="si" title="自定义看板"><svg><use href="#i-workspace"/></svg></span>
+              <span class="si" title="协议预览"><svg><use href="#i-monitor"/></svg></span>
+              <span class="si" title="AI 助手"><svg><use href="#i-sparkle"/></svg></span>
+              <span class="si" title="变更审核"><svg><use href="#i-audit"/></svg></span>
+              <span class="si" title="设置"><svg><use href="#i-settings"/></svg></span>
+            </aside>
+            <div class="app-main">
+              <div class="app-tabs">
+                <span class="t active"><svg><use href="#i-protocol"/></svg>协议配置</span>
+                <span class="t"><svg><use href="#i-serial"/></svg>调试</span>
+                <span class="t"><svg><use href="#i-frames"/></svg>列表发送</span>
+                <span class="t"><svg><use href="#i-send"/></svg>文件发送</span>
+                <span class="spacer"></span>
+                <span class="port"><span class="dot"></span>COM3 · 115200 8N1</span>
+              </div>
+              <div class="app-table">
+                <table>
+                  <thead>
+                    <tr><th>信号</th><th>方向</th><th>类型</th><th>长度</th><th>说明</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>motor_speed</td><td><span class="dir tx">下发</span></td><td>uint16</td><td>2 B</td><td>目标转速 0–3000 rpm</td></tr>
+                    <tr><td>target_steps</td><td><span class="dir tx">下发</span></td><td>int32</td><td>4 B</td><td>目标步数 · 绝对 / 相对</td></tr>
+                    <tr><td>run_ctrl</td><td><span class="dir tx">下发</span></td><td>uint8</td><td>1 B</td><td>启动 / 停止 / 使能枚举</td></tr>
+                    <tr><td>cur_position</td><td><span class="dir rx">上报</span></td><td>int32</td><td>4 B</td><td>当前位置 · 单位 step</td></tr>
+                    <tr><td>alm_code</td><td><span class="dir rx">上报</span></td><td>uint8</td><td>1 B</td><td>报警码 · 过流 / 失步 / 限位</td></tr>
+                    <tr><td>checksum</td><td><span class="dir rx">校验</span></td><td>uint16</td><td>2 B</td><td>帧末 CRC16</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="app-terminal">
+                <div class="row"><span class="ts">12:00:01.234</span><span class="tx">TX →</span><span class="hex">AA 55 20 10 00 02 02 58 6A 3C&nbsp;&nbsp;&nbsp;// 0x20 设置转速 600rpm</span></div>
+                <div class="row"><span class="ts">12:00:01.256</span><span class="rx">RX ←</span><span class="hex">AA 55 A0 10 00 01 00 8E 21&nbsp;&nbsp;&nbsp;// ACK · 参数已接收</span></div>
+                <div class="row"><span class="ts">12:00:01.258</span><span class="rx">RX ←</span><span class="hex">✔ 帧解析完成 · motor_speed=600rpm · CRC16 通过</span></div>
+                <div class="row"><span class="ts">12:00:02.234</span><span class="tx">TX →</span><span class="hex">AA 55 22 10 00 01 01 4F D2<span class="cursor"></span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout c1"><span class="pin"></span>
+        <span class="ct-title"><svg><use href="#i-protocol"/></svg>信号表格</span>
+        <p>帧结构与位域可视化编辑，协议即改即生效。</p>
+      </div>
+      <div class="callout c2"><span class="pin"></span>
+        <span class="ct-title"><svg><use href="#i-serial"/></svg>实时终端</span>
+        <p>收发日志毫秒时间戳，Hex / 文本双视图。</p>
+      </div>
+      <div class="callout c3"><span class="pin"></span>
+        <span class="ct-title"><svg><use href="#i-sparkle"/></svg>AI 助手</span>
+        <p>描述需求即可生成解析规则与调试指令。</p>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- ===== 起因（痛点 · 深色大卡） ===== -->
+<section class="wrap" style="padding-top:24px;padding-bottom:24px">
+  <div class="dark-card reveal">
+    <span class="eyebrow eyebrow-inv">起因</span>
+    <h2>串口调试，还在靠猜？</h2>
+    <ul class="pain-list">
+      <li><span class="k">serial.write(buf)</span><span class="v">裸发十六进制，帧格式全靠脑子记</span></li>
+      <li><span class="k">sscom / 串口助手</span><span class="v">只能收发，协议没有地方沉淀</span></li>
+      <li><span class="k">git diff protocol.h</span><span class="v">协议一改，上下游全靠吼</span></li>
+    </ul>
+    <p class="pain-close">波特律动帮你把协议收进一个地方。</p>
+  </div>
+</section>
+
 <!-- ===== 核心功能 ===== -->
-<section class="section" id="features">
+<section class="section no-rule" id="features">
   <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">核心功能</p>
+    <div class="sec-head reveal">
+      <div class="eyebrow-row"><span class="eyebrow">核心功能</span><span class="rule-line"></span></div>
       <h2 class="display-md">为串口调试而生的完整工具链</h2>
-      <p class="subhead">六大工作区覆盖协议配置、实时调试、文件传输、AI 助手——把散落在各个脚本里的工作，收进一个桌面应用。</p>
     </div>
     <div class="grid-3">
       <div class="card reveal">
@@ -1152,80 +1155,14 @@ svg { display: block; }
   </div>
 </section>
 
+    </div>
+
 <!-- ===== 产品预览 ===== -->
 <section class="section" id="preview">
   <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">产品预览</p>
+    <div class="sec-head reveal">
+      <div class="eyebrow-row"><span class="eyebrow">产品预览</span><span class="rule-line"></span></div>
       <h2 class="display-md">专业级的工作界面</h2>
-      <p class="subhead">信号表格、实时终端、AI 助手同屏协作——六大工作区核心界面逐一呈现，装上就能用。</p>
-    </div>
-
-    <div class="preview-wrap reveal">
-      <div class="screenshot">
-        <div class="app-window">
-          <div class="app-titlebar">
-            <div class="app-dots"><i></i><i></i><i></i></div>
-            <span class="title">BaudLab — 协议配置</span>
-            <div class="app-dots" style="visibility:hidden"><i></i><i></i><i></i></div>
-          </div>
-          <div class="app-body">
-            <aside class="app-sidebar">
-              <span class="si" title="串口通信"><svg><use href="#i-serial"/></svg></span>
-              <span class="si active" title="协议配置"><svg><use href="#i-protocol"/></svg></span>
-              <span class="si" title="自定义看板"><svg><use href="#i-workspace"/></svg></span>
-              <span class="si" title="协议预览"><svg><use href="#i-monitor"/></svg></span>
-              <span class="si" title="AI 助手"><svg><use href="#i-sparkle"/></svg></span>
-              <span class="si" title="变更审核"><svg><use href="#i-audit"/></svg></span>
-              <span class="si" title="设置"><svg><use href="#i-settings"/></svg></span>
-            </aside>
-            <div class="app-main">
-              <div class="app-tabs">
-                <span class="t active"><svg><use href="#i-protocol"/></svg>协议配置</span>
-                <span class="t"><svg><use href="#i-serial"/></svg>调试</span>
-                <span class="t"><svg><use href="#i-frames"/></svg>列表发送</span>
-                <span class="t"><svg><use href="#i-send"/></svg>文件发送</span>
-                <span class="spacer"></span>
-                <span class="port"><span class="dot"></span>COM3 · 115200 8N1</span>
-              </div>
-              <div class="app-table">
-                <table>
-                  <thead>
-                    <tr><th>信号</th><th>方向</th><th>类型</th><th>长度</th><th>说明</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>motor_speed</td><td><span class="dir tx">下发</span></td><td>uint16</td><td>2 B</td><td>目标转速 0–3000 rpm</td></tr>
-                    <tr><td>target_steps</td><td><span class="dir tx">下发</span></td><td>int32</td><td>4 B</td><td>目标步数 · 绝对 / 相对</td></tr>
-                    <tr><td>run_ctrl</td><td><span class="dir tx">下发</span></td><td>uint8</td><td>1 B</td><td>启动 / 停止 / 使能枚举</td></tr>
-                    <tr><td>cur_position</td><td><span class="dir rx">上报</span></td><td>int32</td><td>4 B</td><td>当前位置 · 单位 step</td></tr>
-                    <tr><td>alm_code</td><td><span class="dir rx">上报</span></td><td>uint8</td><td>1 B</td><td>报警码 · 过流 / 失步 / 限位</td></tr>
-                    <tr><td>checksum</td><td><span class="dir rx">校验</span></td><td>uint16</td><td>2 B</td><td>帧末 CRC16</td></tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="app-terminal">
-                <div class="row"><span class="ts">12:00:01.234</span><span class="tx">TX →</span><span class="hex">AA 55 20 10 00 02 02 58 6A 3C&nbsp;&nbsp;&nbsp;// 0x20 设置转速 600rpm</span></div>
-                <div class="row"><span class="ts">12:00:01.256</span><span class="rx">RX ←</span><span class="hex">AA 55 A0 10 00 01 00 8E 21&nbsp;&nbsp;&nbsp;// ACK · 参数已接收</span></div>
-                <div class="row"><span class="ts">12:00:01.258</span><span class="rx">RX ←</span><span class="hex">✔ 帧解析完成 · motor_speed=600rpm · run_ctrl=启动 · CRC16 通过</span></div>
-                <div class="row"><span class="ts">12:00:02.234</span><span class="tx">TX →</span><span class="hex">AA 55 22 10 00 01 01 4F D2<span class="cursor"></span></span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="callout c1"><span class="pin"></span>
-        <h4><svg><use href="#i-protocol"/></svg>信号表格</h4>
-        <p>帧结构与位域可视化编辑，协议即改即生效。</p>
-      </div>
-      <div class="callout c2"><span class="pin"></span>
-        <h4><svg><use href="#i-serial"/></svg>实时终端</h4>
-        <p>收发日志毫秒时间戳，Hex / 文本双视图。</p>
-      </div>
-      <div class="callout c3"><span class="pin"></span>
-        <h4><svg><use href="#i-sparkle"/></svg>AI 助手</h4>
-        <p>描述需求即可生成解析规则与调试指令。</p>
-      </div>
     </div>
 
     <div class="mock-grid">
@@ -1233,7 +1170,7 @@ svg { display: block; }
       <div class="mock-item reveal">
         <div class="mock-caption">
           <span class="mk">DEBUG</span>
-          <h4>串口调试 · 帧预览三视图</h4>
+          <h3>串口调试 · 帧预览三视图</h3>
           <p>协议构帧发送，同一帧同时给出原始值、解析值与物理值；外部 AI 客户端的串口活动带 MCP 标记实时镜像。</p>
         </div>
         <div class="screenshot">
@@ -1273,7 +1210,7 @@ svg { display: block; }
       <div class="mock-item reveal">
         <div class="mock-caption">
           <span class="mk">AI · MCP</span>
-          <h4>AI 助手 · 工具调用与人工确认</h4>
+          <h3>AI 助手 · 工具调用与人工确认</h3>
           <p>对话中直接调用构帧、解析、串口工具；写操作弹窗确认，「记住允许」后可放行同类操作。</p>
         </div>
         <div class="screenshot">
@@ -1314,12 +1251,11 @@ svg { display: block; }
           </div>
         </div>
       </div>
-
       <!-- 自定义看板 -->
       <div class="mock-item reveal">
         <div class="mock-caption">
           <span class="mk">BOARD</span>
-          <h4>自定义看板 · 信号绑定与触发</h4>
+          <h3>自定义看板 · 信号绑定与触发</h3>
           <p>组件拖拽入画布，绑定协议信号实时刷新；触发条件满足时自动执行动作。</p>
         </div>
         <div class="screenshot">
@@ -1336,8 +1272,8 @@ svg { display: block; }
                     <span class="ttl"><svg><use href="#i-loop"/></svg>转速趋势 · motor_speed</span>
                     <div class="val">1200<small>rpm</small></div>
                     <svg class="spark" width="100%" height="26" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
-                      <polyline points="0,20 12,18 24,19 36,13 48,15 60,10 72,12 84,7 96,9 108,5 120,7" fill="none" stroke="#5e6ad2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                      <polyline points="0,20 12,18 24,19 36,13 48,15 60,10 72,12 84,7 96,9 108,5 120,7 120,26 0,26" fill="rgba(94,106,210,.12)" stroke="none"/>
+                      <polyline points="0,20 12,18 24,19 36,13 48,15 60,10 72,12 84,7 96,9 108,5 120,7" fill="none" stroke="#2b44ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <polyline points="0,20 12,18 24,19 36,13 48,15 60,10 72,12 84,7 96,9 108,5 120,7 120,26 0,26" fill="rgba(43,68,255,.12)" stroke="none"/>
                     </svg>
                   </div>
                   <div class="db-card">
@@ -1369,7 +1305,7 @@ svg { display: block; }
       <div class="mock-item reveal">
         <div class="mock-caption">
           <span class="mk">AUDIT</span>
-          <h4>变更审核 · 前后对比</h4>
+          <h3>变更审核 · 前后对比</h3>
           <p>协议修改前后逐项 diff，影响范围一目了然；通过 / 驳回全程留痕，审计日志可导出。</p>
         </div>
         <div class="screenshot">
@@ -1403,12 +1339,11 @@ svg { display: block; }
           </div>
         </div>
       </div>
-
       <!-- 文件传输 AFT-1 -->
       <div class="mock-item reveal">
         <div class="mock-caption">
           <span class="mk">AFT-1</span>
-          <h4>文件传输 · 滑动窗口与重传</h4>
+          <h3>文件传输 · 滑动窗口与重传</h3>
           <p>MTU 分包、滑动窗口发送、选择性重传；帧级 CRC16 + 整包 CRC32 双重校验。</p>
         </div>
         <div class="screenshot">
@@ -1443,7 +1378,7 @@ svg { display: block; }
       <div class="mock-item reveal">
         <div class="mock-caption">
           <span class="mk">DOC</span>
-          <h4>协议预览 · 一键生成规范文档</h4>
+          <h3>协议预览 · 一键生成规范文档</h3>
           <p>帧结构、模块地址、命令定义自动排版成文，复制 Markdown 或导出 PDF，交付沟通更高效。</p>
         </div>
         <div class="screenshot">
@@ -1474,6 +1409,8 @@ svg { display: block; }
           </div>
         </div>
       </div>
+
+
     </div>
   </div>
 </section>
@@ -1481,10 +1418,9 @@ svg { display: block; }
 <!-- ===== 团队联动（动态演示） ===== -->
 <section class="section" id="workflow">
   <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">团队联动</p>
+    <div class="sec-head reveal">
+      <div class="eyebrow-row"><span class="eyebrow">团队联动</span><span class="rule-line"></span></div>
       <h2 class="display-md">一次协议变更的完整流转</h2>
-      <p class="subhead">工程师提交审核 → 团队服务器同步 → 审核人一键发布，两端状态实时联动。演示自动播放，也可点击步骤或按钮自行控制。</p>
     </div>
 
     <div class="flow reveal" id="flowDemo">
@@ -1577,8 +1513,8 @@ svg { display: block; }
       <button class="flow-step" type="button" data-i="3"><span class="n">04</span>审核 diff</button>
       <button class="flow-step" type="button" data-i="4"><span class="n">05</span>发布生效</button>
       <div class="flow-ctrl">
-        <button class="btn btn-secondary" type="button" id="fPlay"><svg><use href="#i-loop"/></svg><span id="fPlayTxt">暂停</span></button>
-        <button class="btn btn-secondary" type="button" id="fReplay"><svg><use href="#i-refresh-cw"/></svg>重播</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="fPlay"><svg><use href="#i-loop"/></svg><span id="fPlayTxt">暂停</span></button>
+        <button class="btn btn-secondary btn-sm" type="button" id="fReplay"><svg><use href="#i-refresh-cw"/></svg>重播</button>
       </div>
     </div>
     <p class="flow-caption reveal" id="fCaption"></p>
@@ -1588,10 +1524,9 @@ svg { display: block; }
 <!-- ===== 应用场景 ===== -->
 <section class="section" id="usecases">
   <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">应用场景</p>
+    <div class="sec-head reveal">
+      <div class="eyebrow-row"><span class="eyebrow">应用场景</span><span class="rule-line"></span></div>
       <h2 class="display-md">覆盖嵌入式开发的每个环节</h2>
-      <p class="subhead">从新板联调到产线测试，从协议逆向到教学实验。</p>
     </div>
     <div class="grid-2">
       <div class="card usecase reveal">
@@ -1627,122 +1562,97 @@ svg { display: block; }
 </section>
 
 <!-- ===== 下载 ===== -->
-<section class="section" id="download">
-  <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">下载</p>
-      <h2 class="display-md">获取波特律动</h2>
-      <p class="subhead">当前稳定版本 <span data-ver>v1.0.0</span>，Windows 平台开箱即用。</p>
-    </div>
+<section class="wrap" id="download" style="padding-top:40px;padding-bottom:24px">
+  <div class="dark-card reveal">
+    <span class="eyebrow eyebrow-inv">下载</span>
+    <h2>现在就装上</h2>
+    <p style="max-width:48ch;margin-top:16px;font-size:17px;line-height:1.65;color:rgba(242,242,242,.65)">当前稳定版本 <span data-ver>v1.0.0</span>，Windows 平台开箱即用；首次启动即可连接串口开始调试。</p>
 
-    <div class="dl-cards">
-      <div class="download-card reveal">
-        <div class="dl-platform">
-          <span class="os-icon"><svg><use href="#i-windows"/></svg></span>
-          <div>
-            <h3>Windows</h3>
-            <span class="caption">10 / 11 · 64 位</span>
-          </div>
-          <span class="badge" style="margin-left:auto"><span class="dot"></span>最新</span>
+    <div class="dl-platform-grid">
+      <div class="dl-platform-card">
+        <div class="dl-card-top">
+          <span class="name">Windows 客户端</span>
+          <span class="status">最新</span>
         </div>
-        <div class="dl-file">
-          <div class="fname" data-asset-client>BaudLab-Setup-1.0.0.exe</div>
-          <div class="fmeta">
-            <span><svg><use href="#i-download"/></svg><span data-size-client>65.4 MB</span></span>
-            <span><svg><use href="#i-cpu"/></svg>NSIS 安装包 · x64</span>
-            <span><svg><use href="#i-loop"/></svg><span data-ver>v1.0.0</span> · <span data-date>2026-10-13</span></span>
-          </div>
-        </div>
+        <dl class="dl-meta">
+          <div><dt>安装包</dt><dd data-asset-client>BaudLab-Setup-1.0.0.exe</dd></div>
+          <div><dt>大小</dt><dd><span data-size-client>65.4 MB</span> · NSIS x64</dd></div>
+          <div><dt>版本</dt><dd><span data-ver>v1.0.0</span> · <span data-date>2026-10-13</span></dd></div>
+          <div><dt>系统</dt><dd>Windows 10 / 11 · x64</dd></div>
+        </dl>
         <div class="dl-actions">
-          <a class="btn btn-primary btn-lg" href="https://github.com/ALVAN-1/BaudLab.io/releases/latest" target="_blank" rel="noopener">
-            <svg><use href="#i-download"/></svg>立即下载 <span data-ver>v1.0.0</span>
-          </a>
-          <a class="btn btn-secondary" href="https://github.com/ALVAN-1/BaudLab.io/releases" target="_blank" rel="noopener">
-            <svg><use href="#i-external"/></svg>历史版本
-          </a>
+          <a class="btn btn-paper" href="https://github.com/ALVAN-1/BaudLab.io/releases/latest" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg>立即下载 <span data-ver>v1.0.0</span></a>
+          <a class="link-under" href="https://github.com/ALVAN-1/BaudLab.io/releases" target="_blank" rel="noopener">历史版本</a>
         </div>
-        <p class="dl-note">下载将跳转至 GitHub Releases 页面</p>
       </div>
 
-      <div class="download-card reveal">
-        <div class="dl-platform">
-          <span class="os-icon"><svg><use href="#i-database"/></svg></span>
-          <div>
-            <h3>团队服务器</h3>
-            <span class="caption">管理员部署 · 内网协作</span>
-          </div>
-          <span class="badge" style="margin-left:auto"><span class="dot"></span>同版本</span>
+      <div class="dl-platform-card">
+        <div class="dl-card-top">
+          <span class="name">团队服务器</span>
+          <span class="status">同版本</span>
         </div>
-        <div class="dl-file">
-          <div class="fname" data-asset-server>BaudLab-Server-1.0.0.zip</div>
-          <div class="fmeta">
-            <span><svg><use href="#i-download"/></svg>轻量部署包</span>
-            <span><svg><use href="#i-cpu"/></svg>需 Node.js 22.13+</span>
-            <span><svg><use href="#i-loop"/></svg>随客户端同一 Release</span>
-          </div>
-        </div>
+        <dl class="dl-meta">
+          <div><dt>部署包</dt><dd data-asset-server>BaudLab-Server-1.0.0.zip</dd></div>
+          <div><dt>用途</dt><dd>管理员部署 · 内网协作</dd></div>
+          <div><dt>依赖</dt><dd>需 Node.js 22.13+</dd></div>
+          <div><dt>系统</dt><dd>随客户端同一 Release</dd></div>
+        </dl>
         <div class="dl-actions">
-          <a class="btn btn-primary btn-lg" href="https://github.com/ALVAN-1/BaudLab.io/releases/latest" target="_blank" rel="noopener">
-            <svg><use href="#i-download"/></svg>下载服务器包
-          </a>
-          <a class="btn btn-secondary" href="#docs">
-            <svg><use href="#i-file-text"/></svg>部署与升级说明
-          </a>
+          <a class="btn btn-paper" href="https://github.com/ALVAN-1/BaudLab.io/releases/latest" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg>下载服务器包</a>
+          <a class="link-under" href="#docs">部署与升级说明</a>
         </div>
-        <p class="dl-note">仅管理员需要；成员安装客户端即可</p>
       </div>
     </div>
 
-    <div class="card reveal" style="padding: var(--s-xl);">
-      <h3 class="card-title" style="margin-bottom: var(--s-lg);">安装说明</h3>
-      <div class="install-steps">
-        <div class="install-step">
-          <span class="n">1</span>
-          <div>
-            <h4>下载安装包</h4>
-            <p>点击左侧按钮获取 <span class="mono" style="color:var(--ink-muted)" data-asset-client>BaudLab-Setup-1.0.0.exe</span>。</p>
-          </div>
-        </div>
-        <div class="install-step">
-          <span class="n">2</span>
-          <div>
-            <h4>运行安装向导</h4>
-            <p>双击安装包，按向导提示选择安装目录，完成安装。支持后期更改安装位置。</p>
-            <div class="req"><span>Windows 10 / 11 64 位</span><span>约 200 MB 可用空间</span><span>无需管理员依赖</span></div>
-          </div>
-        </div>
-        <div class="install-step">
-          <span class="n">3</span>
-          <div>
-            <h4>启动与更新</h4>
-            <p>安装完成后即可启动。应用内置更新检查，新版本发布时会自动提醒，一键升级。</p>
-          </div>
-        </div>
-        <div class="install-step">
-          <span class="n">4</span>
-          <div>
-            <h4>团队协作（可选）</h4>
-            <p>由管理员下载团队服务器包并在内网部署，成员在客户端「数据库连接」页填入服务器地址与令牌即可接入团队协议库；成员无需自建服务器。</p>
-            <div class="req"><span>服务器需 Node.js 22.13+</span><span>客户端与服务器同版本发布</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="dark-foot">下载并使用波特律动即表示你认可其以 MIT License 开源。仅管理员需要部署服务器包；成员安装客户端即可加入团队协议库。</div>
   </div>
+</section>
+
+<!-- ===== 四步即上手 ===== -->
+<section class="container" style="padding-top:56px;padding-bottom:24px">
+  <div class="sec-head reveal">
+    <div class="eyebrow-row"><span class="eyebrow">安装</span><span class="rule-line"></span></div>
+    <h2 class="display-md">四步即上手</h2>
+  </div>
+  <ol class="steps-grid steps-4 reveal">
+    <li class="step-cell">
+      <span class="n">01</span>
+      <h3>下载安装包</h3>
+      <p>获取 <span class="mono" data-asset-client>BaudLab-Setup-1.0.0.exe</span>，约 <span class="mono" data-size-client>65.4 MB</span>。</p>
+      <div class="req"><span>Windows 10 / 11 x64</span></div>
+    </li>
+    <li class="step-cell">
+      <span class="n">02</span>
+      <h3>运行安装向导</h3>
+      <p>双击安装包，按向导提示选择安装目录即可完成，后期可更改安装位置。</p>
+      <div class="req"><span>约 200 MB 空间</span><span>无需管理员依赖</span></div>
+    </li>
+    <li class="step-cell">
+      <span class="n">03</span>
+      <h3>启动与更新</h3>
+      <p>安装完成即可启动，应用内置更新检查，新版本发布时自动提醒、一键升级。</p>
+      <div class="req"><span>首次打开即用</span></div>
+    </li>
+    <li class="step-cell">
+      <span class="n">04</span>
+      <h3>团队协作（可选）</h3>
+      <p>管理员部署服务器包，成员在「数据库连接」填入地址与令牌即可接入团队协议库。</p>
+      <div class="req"><span>需 Node.js 22.13+</span></div>
+    </li>
+  </ol>
 </section>
 
 <!-- ===== 文档 ===== -->
 <section class="section" id="docs">
   <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">文档</p>
+    <div class="sec-head reveal">
+      <div class="eyebrow-row"><span class="eyebrow">文档</span><span class="rule-line"></span></div>
       <h2 class="display-md">从入门到协议规范</h2>
-      <p class="subhead">上手指南、接入文档与协议规范，随取随用。应用内「帮助」面板也可随时查阅。</p>
     </div>
     <div class="grid-2">
       <div class="card doc-card reveal">
         <div class="doc-top">
-          <div class="card-icon" style="margin-bottom:0"><svg><use href="#i-help-circle"/></svg></div>
+          <div class="card-icon"><svg><use href="#i-help-circle"/></svg></div>
           <span class="doc-kind">GUIDE</span>
         </div>
         <h3>快速上手指南</h3>
@@ -1757,7 +1667,7 @@ svg { display: block; }
       </div>
       <div class="card doc-card reveal">
         <div class="doc-top">
-          <div class="card-icon" style="margin-bottom:0"><svg><use href="#i-cpu"/></svg></div>
+          <div class="card-icon"><svg><use href="#i-cpu"/></svg></div>
           <span class="doc-kind">INTEGRATION</span>
         </div>
         <h3>MCP 接入指南</h3>
@@ -1769,7 +1679,7 @@ svg { display: block; }
       </div>
       <div class="card doc-card reveal">
         <div class="doc-top">
-          <div class="card-icon" style="margin-bottom:0"><svg><use href="#i-file-text"/></svg></div>
+          <div class="card-icon"><svg><use href="#i-file-text"/></svg></div>
           <span class="doc-kind">PROTOCOL</span>
         </div>
         <h3>文件传输协议 AFT-1</h3>
@@ -1781,7 +1691,7 @@ svg { display: block; }
       </div>
       <div class="card doc-card reveal">
         <div class="doc-top">
-          <div class="card-icon" style="margin-bottom:0"><svg><use href="#i-audit"/></svg></div>
+          <div class="card-icon"><svg><use href="#i-audit"/></svg></div>
           <span class="doc-kind">ARCHITECTURE</span>
         </div>
         <h3>架构与安全分析</h3>
@@ -1795,7 +1705,7 @@ svg { display: block; }
 
     <div class="docs-all reveal">
       <p>完整文档随应用内置（帮助面板），并可在 GitHub 仓库 docs 目录查阅。</p>
-      <a class="btn btn-secondary" href="#download"><svg><use href="#i-download"/></svg>下载后查看完整文档</a>
+      <a class="btn btn-secondary btn-sm" href="#download"><svg><use href="#i-download"/></svg>下载后查看完整文档</a>
     </div>
   </div>
 </section>
@@ -1803,10 +1713,9 @@ svg { display: block; }
 <!-- ===== 反馈 ===== -->
 <section class="section" id="feedback">
   <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">反馈</p>
+    <div class="sec-head reveal">
+      <div class="eyebrow-row"><span class="eyebrow">反馈</span><span class="rule-line"></span></div>
       <h2 class="display-md">遇到问题？我们在线</h2>
-      <p class="subhead">Bug 反馈、功能建议、使用疑问——每一条都会被看到。</p>
     </div>
 
     <div class="feedback-grid">
@@ -1814,7 +1723,7 @@ svg { display: block; }
         <div class="card channel">
           <span class="card-icon"><svg><use href="#i-message-square"/></svg></span>
           <div>
-            <h4>应用内反馈</h4>
+            <h3>应用内反馈</h3>
             <p>设置 → 反馈，直达开发团队，自动附带运行环境信息。</p>
             <span class="caption">推荐方式 · 响应最快</span>
           </div>
@@ -1822,7 +1731,7 @@ svg { display: block; }
         <div class="card channel">
           <span class="card-icon"><svg><use href="#i-github"/></svg></span>
           <div>
-            <h4>GitHub Issues</h4>
+            <h3>GitHub Issues</h3>
             <p>公开问题跟踪，提交 Bug 或功能建议，进度透明可查。</p>
             <a class="ch-link" href="https://github.com/ALVAN-1/BaudLab.io/issues" target="_blank" rel="noopener">前往 Issues<svg><use href="#i-arrow-right"/></svg></a>
           </div>
@@ -1830,7 +1739,7 @@ svg { display: block; }
         <div class="card channel">
           <span class="card-icon"><svg><use href="#i-mail"/></svg></span>
           <div>
-            <h4>邮件反馈</h4>
+            <h3>邮件反馈</h3>
             <p>不便公开的问题，通过右侧表单发送，我们会回复到你的邮箱。</p>
             <span class="caption">不会收集任何额外信息</span>
           </div>
@@ -1862,7 +1771,7 @@ svg { display: block; }
             <textarea id="fbDetail" placeholder="请描述问题现象、复现步骤、版本号（如 v1.0.0）与操作系统…" required></textarea>
           </div>
           <div class="fb-submit">
-            <button class="btn btn-primary" type="submit"><svg><use href="#i-send"/></svg>发送反馈</button>
+            <button class="btn btn-primary btn-sm" type="submit"><svg><use href="#i-send"/></svg>发送反馈</button>
             <span class="caption">不会收集任何额外信息</span>
           </div>
         </form>
@@ -1872,47 +1781,47 @@ svg { display: block; }
 </section>
 
 <!-- ===== FAQ ===== -->
-<section class="section" id="faq" style="padding-top: 0;">
+<section class="section" id="faq">
   <div class="container">
-    <div class="section-head reveal">
-      <p class="eyebrow">常见问题</p>
+    <div class="sec-head reveal">
+      <div class="eyebrow-row"><span class="eyebrow">常见问题</span><span class="rule-line"></span></div>
       <h2 class="display-md">你可能想知道</h2>
     </div>
     <div class="faq-list reveal">
       <details class="faq-item">
-        <summary>工具是否收费？<svg><use href="#i-chevron-down"/></svg></summary>
+        <summary>工具是否收费？<span class="faq-icon" aria-hidden="true"></span></summary>
         <div class="faq-body"><p>完全免费，且以 MIT License 开源。你可以自由使用、修改和分发。</p></div>
       </details>
       <details class="faq-item">
-        <summary>支持 macOS 或 Linux 吗？<svg><use href="#i-chevron-down"/></svg></summary>
+        <summary>支持 macOS 或 Linux 吗？<span class="faq-icon" aria-hidden="true"></span></summary>
         <div class="faq-body"><p>当前版本面向 Windows 10/11（x64）。macOS 与 Linux 支持已在路线图上，欢迎通过反馈渠道投票。</p></div>
       </details>
       <details class="faq-item">
-        <summary>协议数据存储在哪里？会同步到云端吗？<svg><use href="#i-chevron-down"/></svg></summary>
+        <summary>协议数据存储在哪里？会同步到云端吗？<span class="faq-icon" aria-hidden="true"></span></summary>
         <div class="faq-body"><p>协议与信号数据默认存储在本地 SQLite 数据库中，完全离线可用。工具遵循本地优先原则，未经确认不会上传任何数据。</p></div>
       </details>
       <details class="faq-item">
-        <summary>如何获得版本更新？<svg><use href="#i-chevron-down"/></svg></summary>
+        <summary>如何获得版本更新？<span class="faq-icon" aria-hidden="true"></span></summary>
         <div class="faq-body"><p>应用内置更新检查，启动时若发现新版本会提醒你一键升级。也可以随时在本页「下载」区或 GitHub Releases 获取最新安装包。</p></div>
       </details>
       <details class="faq-item">
-        <summary>可以把协议接入我自己的 AI 工作流吗？<svg><use href="#i-chevron-down"/></svg></summary>
+        <summary>可以把协议接入我自己的 AI 工作流吗？<span class="faq-icon" aria-hidden="true"></span></summary>
         <div class="faq-body"><p>可以。工具内置 MCP 服务器，任何支持 MCP 的 AI 客户端（如 Claude Code、Cursor）都能直接查询协议、读写串口。详见「MCP 接入指南」。</p></div>
       </details>
     </div>
   </div>
 </section>
 
-<!-- ===== CTA Banner ===== -->
-<section class="section" style="padding-top: 0;">
-  <div class="container">
-    <div class="cta-banner reveal">
-      <div>
-        <h2>准备好提升串口调试效率了吗？</h2>
-        <p>免费下载，十分钟完成第一次协议联调。</p>
-      </div>
-      <a class="btn btn-primary btn-lg" href="https://github.com/ALVAN-1/BaudLab.io/releases/latest" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg>免费下载 <span data-ver>v1.0.0</span></a>
+<!-- ===== 结尾 CTA ===== -->
+<section class="container" style="padding-top:40px;padding-bottom:96px">
+  <div class="cta-final reveal">
+    <h2>把串口协议收进一个地方</h2>
+    <p>免费下载，十分钟完成第一次协议联调。</p>
+    <div class="cta-actions">
+      <a class="btn btn-primary" href="https://github.com/ALVAN-1/BaudLab.io/releases/latest" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg>免费下载 <span data-ver>v1.0.0</span></a>
+      <a class="btn btn-secondary" href="#docs"><svg><use href="#i-file-text"/></svg>查看文档</a>
     </div>
+    <span class="caption">Windows 10/11（x64）· 免费开源 · MIT License</span>
   </div>
 </section>
 
@@ -1921,45 +1830,49 @@ svg { display: block; }
 <!-- ===== Footer ===== -->
 <footer class="footer">
   <div class="footer-inner">
-    <div class="footer-grid">
+    <div class="footer-top">
       <div class="footer-brand">
         <a class="brand" href="#top">
-          <span class="brand-mark"><svg><use href="#i-serial"/></svg></span>
-          波特律动 <small>BaudLab</small>
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#2b44ff"/><path d="M3.5 12 L6.5 12 L6.5 7 L9.5 7 L9.5 17 L12.5 17 L12.5 9.5 L15.5 9.5 L15.5 12 L20.5 12" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="brand-name">BaudLab<small>波特律动</small></span>
         </a>
         <p>一站式串口协议管理与调试工具。本地优先，数据不出本机。</p>
-        <span class="badge"><span class="dot"></span><span data-ver>v1.0.0</span> · 运行正常</span>
+        <span class="badge"><span class="dot ok"></span><span data-ver>v1.0.0</span> · 运行正常</span>
       </div>
-      <div>
-        <h5>产品</h5>
-        <ul>
-          <li><a href="#features">功能特性</a></li>
-          <li><a href="#preview">产品预览</a></li>
-          <li><a href="#download">下载</a></li>
-          <li><a href="https://github.com/ALVAN-1/BaudLab.io/releases" target="_blank" rel="noopener">更新日志</a></li>
-        </ul>
-      </div>
-      <div>
-        <h5>资源</h5>
-        <ul>
-          <li><a href="#docs">快速上手</a></li>
-          <li><a href="#docs">MCP 接入指南</a></li>
-          <li><a href="#docs">AFT-1 协议</a></li>
-          <li><a href="#docs">全部文档</a></li>
-        </ul>
-      </div>
-      <div>
-        <h5>支持</h5>
-        <ul>
-          <li><a href="#feedback">意见反馈</a></li>
-          <li><a href="https://github.com/ALVAN-1/BaudLab.io/issues" target="_blank" rel="noopener">GitHub Issues</a></li>
-          <li><a href="#faq">常见问题</a></li>
-        </ul>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <span class="label">产品</span>
+          <div class="links">
+            <a href="#features">功能特性</a>
+            <a href="#preview">产品预览</a>
+            <a href="#download">下载</a>
+            <a href="https://github.com/ALVAN-1/BaudLab.io/releases" target="_blank" rel="noopener">更新日志</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <span class="label">资源</span>
+          <div class="links">
+            <a href="#docs">快速上手</a>
+            <a href="#docs">MCP 接入指南</a>
+            <a href="#docs">AFT-1 协议</a>
+            <a href="#docs">全部文档</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <span class="label">支持</span>
+          <div class="links">
+            <a href="#feedback">意见反馈</a>
+            <a href="https://github.com/ALVAN-1/BaudLab.io/issues" target="_blank" rel="noopener">GitHub Issues</a>
+            <a href="#faq">常见问题</a>
+          </div>
+        </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <span class="caption">© 2025–2026 波特律动 BaudLab · MIT License</span>
-      <span class="caption">Built with Electron · 本地优先设计</span>
+      <span>© 2025–2026 波特律动 BaudLab · MIT License</span>
+      <span>Built with Electron · 本地优先设计</span>
     </div>
   </div>
 </footer>
@@ -2065,7 +1978,6 @@ svg { display: block; }
       btn.firstChild.textContent = open ? '收起摘要' : '查看摘要';
     });
   });
-
   /* ===== 团队联动演示：双端 + 服务器状态机 ===== */
   var flowRoot = document.getElementById('flowDemo');
   if (flowRoot) {
@@ -2198,3 +2110,4 @@ svg { display: block; }
 </script>
 </body>
 </html>
+

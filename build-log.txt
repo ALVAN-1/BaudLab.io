@@ -1,12 +1,405 @@
   鈥?electron-builder  version=24.13.3 os=10.0.19045
   鈥?loaded configuration  file=package.json ("build" field)
+  鈥?effective config  config=directories:
+  output: dist2
+  buildResources: build
+appId: com.serial-protocol-manager
+productName: BaudLab
+compression: maximum
+electronLanguages:
+  - zh-CN
+afterPack: ./scripts/afterPack.js
+files:
+  - filter:
+      - main.js
+      - update-controller.js
+      - preload.js
+      - auth.js
+      - ai-assistant.js
+      - ai-tools.js
+      - mcp-bridge.js
+      - frame-codec.js
+      - server-embed.js
+      - mdns.js
+      - db-schema.js
+      - default-protocol-data.js
+      - assets/**/*
+      - dist/renderer/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/app.ico
+  executableName: BaudLab
+nsis:
+  oneClick: false
+  perMachine: false
+  installerLanguages:
+    - zh_CN
+  allowToChangeInstallationDirectory: true
+  artifactName: BaudLab-Setup-${version}.${ext}
+  include: build/installer.nsh
+  differentialPackage: false
+  warningsAsErrors: false
+  installerIcon: assets/app.ico
+  uninstallerIcon: assets/app.ico
+  installerHeader: build/header.bmp
+  installerHeaderIcon: assets/app.ico
+  installerSidebar: build/welcome.bmp
+  uninstallerSidebar: build/welcome.bmp
+publish:
+  provider: github
+  owner: ALVAN-1
+  repo: BaudLab.io
+
   鈥?@electron/rebuild not required if you use electron-builder, please consider to remove excess dependency from devDependencies
 
 To ensure your native dependencies are always matched electron version, simply add script `"postinstall": "electron-builder install-app-deps" to your `package.json`
+  鈥?spawning        command=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-bin\win\x64\app-builder.exe node-dep-tree --dir D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab
+  鈥?unresolved deps  unresolved=tiny-typed-emitterfs-extrajs-yamllazy-vallodash.escaperegexplodash.isequal nodeModuleDir=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules round=0
+  鈥?unresolved deps  unresolved=debugsax nodeModuleDir=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules round=0
+  鈥?unresolved deps  unresolved=@serialport/parser-regex@serialport/parser-slip-encoder@serialport/parser-readline@serialport/parser-packet-length@serialport/parser-ready@serialport/parser-delimiter@serialport/parser-cctalk@serialport/parser-inter-byte-timeout@serialport/parser-byte-length@serialport/bindings-cpp@serialport/parser-spacepacket@serialport/stream@serialport/binding-mock
+                     nodeModuleDir=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules
+                     round=0
+  鈥?unresolved deps  unresolved=@serialport/bindings-interfacenode-gyp-build nodeModuleDir=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules round=0
+  鈥?unresolved deps  unresolved=@serialport/bindings-interface nodeModuleDir=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules round=0
+  鈥?unresolved deps  unresolved=mkdirp-classicpumptar-stream nodeModuleDir=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules round=0
+  鈥?exited          command=app-builder.exe code=0 pid=36444 out=[{"dir":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\node_modules","deps":[{"name":"@leichtgewicht/ip-codec","version":"2.0.5"},{"name":"@serialport/binding-mock","version":"10.2.2"},{"name":"@serialport/bindings-cpp","version":"12.0.1","napiVersions":[6]},{"name":"@serialport/bindings-interface","version":"1.2.2"},{"name":"@serialport/parser-byte-length","version":"12.0.0"},{"name":"@serialport/parser-cctalk","version":"12.0.0"},{"name":"@serialport/parser-delimiter","version":"12.0.0"},{"name":"@serialport/parser-inter-byte-timeout","version":"12.0.0"},{"name":"@serialport/parser-packet-length","version":"12.0.0"},{"name":"@serialport/parser-readline","version":"12.0.0"},{"name":"@serialport/parser-ready","version":"12.0.0"},{"name":"@serialport/parser-regex","version":"12.0.0"},{"name":"@serialport/parser-slip-encoder","version":"12.0.0"},{"name":"@serialport/parser-spacepacket","version":"12.0.0"},{"name":"@serialport/stream","version":"12.0.0"},{"name":"argparse","version":"2.0.1"},{"name":"base64-js","version":"1.5.1"},{"name":"better-sqlite3","version":"11.10.0","hasPrebuildInstall":true},{"name":"bindings","version":"1.5.0"},{"name":"bl","version":"4.1.0"},{"name":"bonjour-service","version":"1.4.4"},{"name":"buffer","version":"5.7.1"},{"name":"debug","version":"4.4.3"},{"name":"decompress-response","version":"6.0.0"},{"name":"deep-extend","version":"0.6.0"},{"name":"detect-libc","version":"2.1.2"},{"name":"dns-packet","version":"5.6.1"},{"name":"electron-updater","version":"6.8.9"},{"name":"end-of-stream","version":"1.4.5"},{"name":"expand-template","version":"2.0.3"},{"name":"fast-deep-equal","version":"3.1.3"},{"name":"file-uri-to-path","version":"1.0.0"},{"name":"fs-constants","version":"1.0.0"},{"name":"fs-extra","version":"10.1.0"},{"name":"github-from-package","version":"0.0.0"},{"name":"graceful-fs","version":"4.2.11"},{"name":"ieee754","version":"1.2.1"},{"name":"inherits","version":"2.0.4"},{"name":"ini","version":"1.3.8"},{"name":"js-yaml","version":"4.3.2"},{"name":"jsonfile","version":"6.2.1"},{"name":"lazy-val","version":"1.0.5"},{"name":"lodash.escaperegexp","version":"4.1.2"},{"name":"lodash.isequal","version":"4.5.0"},{"name":"minimist","version":"1.2.8"},{"name":"mkdirp-classic","version":"0.5.3"},{"name":"ms","version":"2.1.3"},{"name":"multicast-dns","version":"7.2.5"},{"name":"napi-build-utils","version":"1.0.2","napiVersions":[223]},{"name":"node-abi","version":"3.96.0"},{"name":"node-gyp-build","version":"4.6.0"},{"name":"once","version":"1.4.0"},{"name":"prebuild-install","version":"7.1.2"},{"name":"pump","version":"3.0.4"},{"name":"rc","version":"1.2.8"},{"name":"readable-stream","version":"3.6.2"},{"name":"safe-buffer","version":"5.2.1"},{"name":"sax","version":"1.6.1"},{"name":"semver","version":"7.8.5"},{"name":"serialport","version":"12.0.0"},{"name":"simple-concat","version":"1.0.1"},{"name":"simple-get","version":"4.0.1"},{"name":"string_decoder","version":"1.3.0"},{"name":"strip-json-comments","version":"2.0.1"},{"name":"tar-fs","version":"2.1.5"},{"name":"tar-stream","version":"2.2.0"},{"name":"thunky","version":"1.1.0"},{"name":"tiny-typed-emitter","version":"2.1.0"},{"name":"tunnel-agent","version":"0.6.0"},{"name":"universalify","version":"2.0.1"},{"name":"util-deprecate","version":"1.0.2"},{"name":"wrappy","version":"1.0.2"}]},{"dir":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\node_modules\\decompress-response\\node_modules","deps":[{"name":"mimic-response","version":"3.1.0"}]},{"dir":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\node_modules\\electron-updater\\node_modules","deps":[{"name":"builder-util-runtime","version":"9.7.0"},{"name":"semver","version":"7.7.4"}]},{"dir":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\node_modules\\serialport\\node_modules","deps":[{"name":"debug","version":"4.3.4"},{"name":"ms","version":"2.1.2"}]},{"dir":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\node_modules\\tar-fs\\node_modules","deps":[{"name":"chownr","version":"1.1.4"}]},{"dir":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\node_modules\\@serialport\\bindings-cpp\\node_modules","deps":[{"name":"@serialport/parser-delimiter","version":"11.0.0"},{"name":"@serialport/parser-readline","version":"11.0.0"},{"name":"debug","version":"4.3.4"},{"name":"ms","version":"2.1.2"},{"name":"node-addon-api","version":"7.0.0"}]},{"dir":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\node_modules\\@serialport\\stream\\node_modules","deps":[{"name":"debug","version":"4.3.4"},{"name":"ms","version":"2.1.2"}]}]
+  鈥?spawning        command=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-bin\win\x64\app-builder.exe rebuild-node-modules cwd=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab
+  鈥?map async       taskCount=7
+  鈥?map async       taskCount=2
+  鈥?map async       taskCount=72
+  鈥?map async       taskCount=1
+  鈥?map async       taskCount=2
+  鈥?map async       taskCount=2
+  鈥?map async       taskCount=1
+  鈥?map async       taskCount=5
   鈥?rebuilding native dependencies  dependencies=@serialport/bindings-cpp@12.0.1, better-sqlite3@11.10.0 platform=win32 arch=x64
+  鈥?map async       taskCount=2
   鈥?install prebuilt binary  name=better-sqlite3 version=11.10.0 platform=win32 arch=x64 napi=
-  鈥?packaging       platform=win32 arch=x64 electron=31.7.7 appOutDir=dist\win-unpacked
+  鈥?execute command  command='C:\nvm4w\nodejs\node.exe' 'D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\prebuild-install\bin.js' --platform=win32 --arch=x64 --target=31.7.7 --runtime=electron --verbose --force
+                     workingDirectory=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\better-sqlite3
+  鈥?command executed  executable=C:\nvm4w\nodejs\node.exe
+                      errorOut=prebuild-install info begin Prebuild-install version 7.1.2
+    prebuild-install warn install prebuilt binaries enforced with --force!
+    prebuild-install warn install prebuilt binaries may be out of date!
+    prebuild-install info looking for local prebuild @ prebuilds\better-sqlite3-v11.10.0-electron-v125-win32-x64.tar.gz
+    prebuild-install info looking for cached prebuild @ C:\Users\Administrator\AppData\Local\npm-cache\_prebuilds\3156c0-better-sqlite3-v11.10.0-electron-v125-win32-x64.tar.gz
+    prebuild-install info found cached prebuild
+    prebuild-install info unpacking @ C:\Users\Administrator\AppData\Local\npm-cache\_prebuilds\3156c0-better-sqlite3-v11.10.0-electron-v125-win32-x64.tar.gz
+    prebuild-install info unpack resolved to D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\better-sqlite3\build\Release\better_sqlite3.node
+    prebuild-install info install Successfully installed prebuilt binary!
+    
+  鈥?execute command  command='C:\nvm4w\nodejs\node.exe' 'C:\Users\Administrator\AppData\Local\nvm\v22.22.1\node_modules\npm\bin\npm-cli.js' rebuild --verbose @serialport/bindings-cpp@12.0.1
+                     workingDirectory=
+  鈥?command executed  executable=C:\nvm4w\nodejs\node.exe
+                      out=rebuilt dependencies successfully
+
+                      errorOut=npm verbose cli C:\nvm4w\nodejs\node.exe C:\Users\Administrator\AppData\Local\nvm\v22.22.1\node_modules\npm\bin\npm-cli.js
+    npm info using npm@10.9.4
+    npm info using node@v22.22.1
+    npm verbose title npm rebuild @serialport/bindings-cpp@12.0.1
+    npm verbose argv "rebuild" "--loglevel" "verbose" "@serialport/bindings-cpp@12.0.1"
+    npm verbose logfile logs-max:10 dir:C:\Users\Administrator\AppData\Local\npm-cache\_logs\2026-10-19T04_09_52_710Z-
+    npm verbose logfile C:\Users\Administrator\AppData\Local\npm-cache\_logs\2026-10-19T04_09_52_710Z-debug-0.log
+    npm verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+    npm info run @serialport/bindings-cpp@12.0.1 install node_modules/@serialport/bindings-cpp node-gyp-build
+    npm info run @serialport/bindings-cpp@12.0.1 install { code: 0, signal: null }
+    npm verbose cwd D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab
+    npm verbose os Windows_NT 10.0.19045
+    npm verbose node v22.22.1
+    npm verbose npm  v10.9.4
+    npm verbose exit 0
+    npm info ok
+    
+  鈥?exited          command=app-builder.exe code=0 pid=19588
+  鈥?packaging       platform=win32 arch=x64 electron=31.7.7 appOutDir=dist2\win-unpacked
+  鈥?spawning        command=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-bin\win\x64\app-builder.exe unpack-electron --configuration [{"platform":"win32","arch":"x64","version":"31.7.7"}] --output D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\win-unpacked --distMacOsAppName Electron.app
+  鈥?map async       taskCount=2
+  鈥?map async       taskCount=1
+  鈥?map async       taskCount=73
+  鈥?exited          command=app-builder.exe code=0 pid=26972
 [afterPack] 瑁佸壀瀹屾垚: LICENSES.chromium.html, LICENSE.electron.txt
 [afterPack] MCP 鏂囦欢鎷疯礉瀹屾垚: mcp/mcp-server.js, mcp/ai-tools.js, mcp/mcp-bridge.js, mcp/frame-codec.js, mcp/package.json
-[afterPack] 鍐呭祵鏈嶅姟鍣ㄨ繍琛屾椂宸插氨缁? D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist\win-unpacked\resources\server (3 涓枃浠?+ node_modules)
-  鈥?building        target=nsis file=dist\BaudLab-Setup-1.0.12.exe archs=x64 oneClick=false perMachine=false
+[afterPack] 鍐呭祵鏈嶅姟鍣ㄨ繍琛屾椂宸插氨缁? D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\win-unpacked\resources\server (3 涓枃浠?+ node_modules)
+  鈥?spawning        command=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-bin\win\x64\app-builder.exe icon --format ico --root D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build --root D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab --out D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\.icon-ico --input assets/app.ico
+  鈥?path doesn't exist  path=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\assets\app.ico
+  鈥?path resolved   path=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico outputFormat=ico
+  鈥?exited          command=app-builder.exe code=0 pid=45552 out={"icons":[{"file":"D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\assets\\app.ico","size":0}],"isFallback":false}
+  鈥?spawning        command=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-bin\win\x64\app-builder.exe rcedit --args ["D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\dist2\\win-unpacked\\BaudLab.exe","--set-version-string","FileDescription","BaudLab","--set-version-string","ProductName","BaudLab","--set-version-string","LegalCopyright","Copyright 漏 2026 BaudLab","--set-file-version","1.0.13","--set-product-version","1.0.13.0","--set-version-string","InternalName","BaudLab","--set-version-string","OriginalFilename","","--set-version-string","CompanyName","BaudLab","--set-icon","D:\\CJH_FILE\\1_ProjectFile\\ALVAN_UART_TOOL\\BaudLab\\BaudLab\\assets\\app.ico"]
+  鈥?found existing  path=C:\Users\Administrator\AppData\Local\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0
+  鈥?execute command  command='C:\Users\Administrator\AppData\Local\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0\rcedit-x64.exe' 'D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\win-unpacked\BaudLab.exe' --set-version-string FileDescription BaudLab --set-version-string ProductName BaudLab --set-version-string LegalCopyright 'Copyright 漏 2026 BaudLab' --set-file-version 1.0.13 --set-product-version 1.0.13.0 --set-version-string InternalName BaudLab --set-version-string OriginalFilename '' --set-version-string CompanyName BaudLab --set-icon 'D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico'
+                     workingDirectory=
+  鈥?command executed  executable=C:\Users\Administrator\AppData\Local\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0\rcedit-x64.exe
+  鈥?exited          command=app-builder.exe code=0 pid=32388
+wine&sign: 0s 787ms
+  鈥?building        target=nsis file=dist2\BaudLab-Setup-1.0.13.exe archs=x64 oneClick=false perMachine=false
+  鈥?spawning        command=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-bin\win\x64\app-builder.exe download-artifact --name nsis-3.0.4.1 --url https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z --sha512 VKMiizYdmNdJOWpRGz4trl4lD++BvYP2irAXpMilheUP0pc93iKlWAoP843Vlraj8YG19CVn0j+dCo/hURz9+Q==
+  鈥?found existing  path=C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-3.0.4.1
+  鈥?exited          command=app-builder.exe code=0 pid=65188 out=C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-3.0.4.1
+  鈥?executing       file=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\7zip-bin\win\x64\7za.exe args=a -bd -mx=9 -mtc=off -mtm=off -mta=off D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z . -xr!*.avi -xr!*.mov -xr!*.m4v -xr!*.mp4 -xr!*.m4p -xr!*.qt -xr!*.mkv -xr!*.webm -xr!*.vmdk cwd=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\win-unpacked
+nsis package, x64: 73s 829ms
+  鈥?executing       file=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\7zip-bin\win\x64\7za.exe args=l D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z
+  鈥?executed        file=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\7zip-bin\win\x64\7za.exe stdout=
+7-Zip (a) 21.07 (x64) : Copyright (c) 1999-2021 Igor Pavlov : 2021-12-26
+                      Scanning the drive for archives:
+1 file, 67885000 bytes (65 MiB)
+                      Listing archive: D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z
+                      --
+Path = D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z
+Type = 7z
+Physical Size = 67885000
+Headers Size = 1081
+Method = LZMA2:26 LZMA:20 BCJ2
+Solid = +
+Blocks = 2
+                         Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+                    D....            0            0  locales
+                    D....            0            0  resources
+                    D....            0            0  resources\mcp
+                    D....            0            0  resources\server
+                    D....            0            0  resources\server\node_modules
+                    D....            0            0  resources\server\node_modules\better-sqlite3
+                    D....            0            0  resources\server\node_modules\better-sqlite3\build
+                    D....            0            0  resources\server\node_modules\better-sqlite3\build\Release
+                    D....            0            0  resources\server\node_modules\better-sqlite3\lib
+                    D....            0            0  resources\server\node_modules\better-sqlite3\lib\methods
+                    D....            0            0  resources\server\node_modules\bindings
+                    D....            0            0  resources\server\node_modules\file-uri-to-path
+                    ....A       151856     12981599  chrome_100_percent.pak
+                    ....A       228784               chrome_200_percent.pak
+                    ....A     10468208               icudtl.dat
+                    ....A       471950               locales\zh-CN.pak
+                    ....A          102               resources\app-update.yml
+                    ....A     18199643               resources\app.asar
+                    ....A        36173               resources\mcp\ai-tools.js
+                    ....A        23833               resources\mcp\frame-codec.js
+                    ....A         5007               resources\mcp\mcp-bridge.js
+                    ....A        20703               resources\mcp\mcp-server.js
+                    ....A         2607               resources\mcp\package.json
+                    ....A        18624               resources\server\db-schema.js
+                    ....A        10080               resources\server\default-protocol-data.js
+                    ....A            8               resources\server\node_modules\better-sqlite3\build\Release\.forge-meta
+                    ....A      1720320               resources\server\node_modules\better-sqlite3\build\Release\better_sqlite3.node
+                    ....A         4116               resources\server\node_modules\better-sqlite3\lib\database.js
+                    ....A          110               resources\server\node_modules\better-sqlite3\lib\index.js
+                    ....A         1932               resources\server\node_modules\better-sqlite3\lib\methods\aggregate.js
+                    ....A         2380               resources\server\node_modules\better-sqlite3\lib\methods\backup.js
+                    ....A         1396               resources\server\node_modules\better-sqlite3\lib\methods\function.js
+                    ....A          174               resources\server\node_modules\better-sqlite3\lib\methods\inspect.js
+                    ....A          536               resources\server\node_modules\better-sqlite3\lib\methods\pragma.js
+                    ....A          625               resources\server\node_modules\better-sqlite3\lib\methods\serialize.js
+                    ....A         7144               resources\server\node_modules\better-sqlite3\lib\methods\table.js
+                    ....A         2792               resources\server\node_modules\better-sqlite3\lib\methods\transaction.js
+                    ....A         1145               resources\server\node_modules\better-sqlite3\lib\methods\wrappers.js
+                    ....A          717               resources\server\node_modules\better-sqlite3\lib\sqlite-error.js
+                    ....A          331               resources\server\node_modules\better-sqlite3\lib\util.js
+                    ....A         1493               resources\server\node_modules\better-sqlite3\package.json
+                    ....A         5986               resources\server\node_modules\bindings\bindings.js
+                    ....A          660               resources\server\node_modules\bindings\package.json
+                    ....A         1723               resources\server\node_modules\file-uri-to-path\index.js
+                    ....A          717               resources\server\node_modules\file-uri-to-path\package.json
+                    ....A       155668               resources\server\server.js
+                    ....A      5547739               resources.pak
+                    ....A       310242               snapshot_blob.bin
+                    ....A       662053               v8_context_snapshot.bin
+                    ....A          106               vk_swiftshader_icd.json
+                    ....A    180840448     54902320  BaudLab.exe
+                    ....A      4916728               d3dcompiler_47.dll
+                    ....A      2682880               ffmpeg.dll
+                    ....A       481280               libEGL.dll
+                    ....A      8058368               libGLESv2.dll
+                    ....A       107520               resources\elevate.exe
+                    ....A      5475328               vk_swiftshader.dll
+                    ....A       961024               vulkan-1.dll
+------------------- ----- ------------ ------------  ------------------------
+                             241591259     67883919  46 files, 12 folders
+
+  鈥?spawning        command=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-bin\win\x64\app-builder.exe download-artifact --name nsis-resources-3.4.1 --url https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z --sha512 Dqd6g+2buwwvoG1Vyf6BHR1b+25QMmPcwZx40atOT57gH27rkjOei1L0JTldxZu4NFoEmW4kJgZ3DlSWVON3+Q==
+  鈥?found existing  path=C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-resources-3.4.1
+  鈥?exited          command=app-builder.exe code=0 pid=36820 out=C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-resources-3.4.1
+  鈥?spawning        command=C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-3.0.4.1\Bin\makensis.exe -INPUTCHARSET UTF8 -DAPP_ID=com.serial-protocol-manager -DAPP_GUID=f5bf08b5-1e47-5802-9450-f23db4b4841a -DUNINSTALL_APP_KEY=f5bf08b5-1e47-5802-9450-f23db4b4841a -DPRODUCT_NAME=BaudLab -DPRODUCT_FILENAME=BaudLab -DAPP_FILENAME=BaudLab -DAPP_DESCRIPTION=涓插彛鍗忚绠＄悊宸ュ叿 - Electron + Vue 3 鐗?-DVERSION=1.0.13 -DPROJECT_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab -DBUILD_RESOURCES_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build -DAPP_PACKAGE_NAME=serial-protocol-manager -DMUI_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico -DMUI_UNICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico -DAPP_64=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z -DAPP_64_NAME=serial-protocol-manager-1.0.13-x64.nsis.7z -DAPP_64_HASH=B481BA4D08396201D3F578F8C339D11006940F313A6C5C56E0AE58AD6A89757C7C42BB0196502026D89EF4013866809BA7317B80E185DFE532B3FEDA99CEEB2E -DAPP_64_UNPACKED_SIZE=235929 -DCOMPANY_NAME=BaudLab -DAPP_INSTALLER_STORE_FILE=serial-protocol-manager-updater\installer.exe -DCOMPRESSION_METHOD=7z -DMULTIUSER_INSTALLMODE_ALLOW_ELEVATION -DINSTALL_MODE_PER_ALL_USERS_REQUIRED -DallowToChangeInstallationDirectory -DSHORTCUT_NAME=BaudLab -DUNINSTALL_DISPLAY_NAME=BaudLab 1.0.13 -DMUI_HEADERIMAGE -DMUI_HEADERIMAGE_RIGHT -DMUI_HEADERIMAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\header.bmp -DMUI_WELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp -DUNINSTALLER_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico -DMUI_UNWELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp -DESTIMATED_SIZE=235929 -DCOMPRESS=auto -DBUILD_UNINSTALLER -DUNINSTALLER_OUT_FILE=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\__uninstaller-nsis-serial-protocol-manager.exe -XOutFile "D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\BaudLab-Setup-1.0.13.exe" -XVIProductVersion 1.0.13.0 -XVIAddVersionKey /LANG=1033 ProductName "BaudLab" -XVIAddVersionKey /LANG=1033 ProductVersion "1.0.13" -XVIAddVersionKey /LANG=1033 LegalCopyright "Copyright 漏 2026 BaudLab" -XVIAddVersionKey /LANG=1033 FileDescription "涓插彛鍗忚绠＄悊宸ュ叿 - Electron + Vue 3 鐗? -XVIAddVersionKey /LANG=1033 FileVersion "1.0.13" -XVIAddVersionKey /LANG=1033 CompanyName "BaudLab" -XUnicode true -XSetCompressor zlib - cwd=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-lib\templates\nsis
+Command line defined: "APP_ID=com.serial-protocol-manager"
+Command line defined: "APP_GUID=f5bf08b5-1e47-5802-9450-f23db4b4841a"
+Command line defined: "UNINSTALL_APP_KEY=f5bf08b5-1e47-5802-9450-f23db4b4841a"
+Command line defined: "PRODUCT_NAME=BaudLab"
+Command line defined: "PRODUCT_FILENAME=BaudLab"
+Command line defined: "APP_FILENAME=BaudLab"
+Command line defined: "APP_DESCRIPTION=串口协议管理工具 - Electron + Vue 3 版"
+Command line defined: "VERSION=1.0.13"
+Command line defined: "PROJECT_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab"
+Command line defined: "BUILD_RESOURCES_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build"
+Command line defined: "APP_PACKAGE_NAME=serial-protocol-manager"
+Command line defined: "MUI_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico"
+Command line defined: "MUI_UNICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico"
+Command line defined: "APP_64=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z"
+Command line defined: "APP_64_NAME=serial-protocol-manager-1.0.13-x64.nsis.7z"
+Command line defined: "APP_64_HASH=B481BA4D08396201D3F578F8C339D11006940F313A6C5C56E0AE58AD6A89757C7C42BB0196502026D89EF4013866809BA7317B80E185DFE532B3FEDA99CEEB2E"
+Command line defined: "APP_64_UNPACKED_SIZE=235929"
+Command line defined: "COMPANY_NAME=BaudLab"
+Command line defined: "APP_INSTALLER_STORE_FILE=serial-protocol-manager-updater\installer.exe"
+Command line defined: "COMPRESSION_METHOD=7z"
+Command line defined: "MULTIUSER_INSTALLMODE_ALLOW_ELEVATION"
+Command line defined: "INSTALL_MODE_PER_ALL_USERS_REQUIRED"
+Command line defined: "allowToChangeInstallationDirectory"
+Command line defined: "SHORTCUT_NAME=BaudLab"
+Command line defined: "UNINSTALL_DISPLAY_NAME=BaudLab 1.0.13"
+Command line defined: "MUI_HEADERIMAGE"
+Command line defined: "MUI_HEADERIMAGE_RIGHT"
+Command line defined: "MUI_HEADERIMAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\header.bmp"
+Command line defined: "MUI_WELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp"
+Command line defined: "UNINSTALLER_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico"
+Command line defined: "MUI_UNWELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp"
+Command line defined: "ESTIMATED_SIZE=235929"
+Command line defined: "COMPRESS=auto"
+Command line defined: "BUILD_UNINSTALLER"
+Command line defined: "UNINSTALLER_OUT_FILE=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\__uninstaller-nsis-serial-protocol-manager.exe"
+Processing config: C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-3.0.4.1\nsisconf.nsh
+Processing script file: "<stdin>" (UTF8)
+已复制         1 个文件。
+
+Processed 1 file, 10 command line commands, writing output (x86-unicode):
+warning 6001: Variable "BL_Chosen" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_FTitle" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_FH2" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_FRadio" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_FBody" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_FSmall" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_Icon" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_Info" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_P1S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_D1S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_T1S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_C1S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_P1U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_D1U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_T1U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_C1U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_P2S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_D2S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_T2S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_C2S" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_P2U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_D2U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_T2U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_C2U" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RunS" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RnDS" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RnTS" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RunU" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RnDU" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RnTU" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RunOn" not referenced or never set, wasting memory!
+
+Output: "D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\BaudLab-Setup-1.0.13.exe"
+Install: 0 pages (0 bytes), 1 section (16408 bytes), 48 instructions (1344 bytes), 221 strings (1620 bytes), 1 language table (170 bytes).
+Uninstall: 4 pages (320 bytes), 1 section (16408 bytes), 1813 instructions (50764 bytes), 1226 strings (9314 bytes), 1 language table (334 bytes).
+
+Using zlib compression.
+
+EXE header size:               66560 / 39424 bytes
+Install code:                   1359 / 19942 bytes
+Install data:                    353 / 104466 bytes
+Uninstall code+data:          119093 / 120123 bytes
+CRC (0xB3204F62):                  4 / 4 bytes
+
+Total size:                   187369 / 283959 bytes (65.9%)
+
+31 warnings:
+  6001: Variable "BL_Chosen" not referenced or never set, wasting memory!
+  6001: Variable "BL_FTitle" not referenced or never set, wasting memory!
+  6001: Variable "BL_FH2" not referenced or never set, wasting memory!
+  6001: Variable "BL_FRadio" not referenced or never set, wasting memory!
+  6001: Variable "BL_FBody" not referenced or never set, wasting memory!
+  6001: Variable "BL_FSmall" not referenced or never set, wasting memory!
+  6001: Variable "BL_Icon" not referenced or never set, wasting memory!
+  6001: Variable "BL_Info" not referenced or never set, wasting memory!
+  6001: Variable "BL_P1S" not referenced or never set, wasting memory!
+  6001: Variable "BL_D1S" not referenced or never set, wasting memory!
+  6001: Variable "BL_T1S" not referenced or never set, wasting memory!
+  6001: Variable "BL_C1S" not referenced or never set, wasting memory!
+  6001: Variable "BL_P1U" not referenced or never set, wasting memory!
+  6001: Variable "BL_D1U" not referenced or never set, wasting memory!
+  6001: Variable "BL_T1U" not referenced or never set, wasting memory!
+  6001: Variable "BL_C1U" not referenced or never set, wasting memory!
+  6001: Variable "BL_P2S" not referenced or never set, wasting memory!
+  6001: Variable "BL_D2S" not referenced or never set, wasting memory!
+  6001: Variable "BL_T2S" not referenced or never set, wasting memory!
+  6001: Variable "BL_C2S" not referenced or never set, wasting memory!
+  6001: Variable "BL_P2U" not referenced or never set, wasting memory!
+  6001: Variable "BL_D2U" not referenced or never set, wasting memory!
+  6001: Variable "BL_T2U" not referenced or never set, wasting memory!
+  6001: Variable "BL_C2U" not referenced or never set, wasting memory!
+  6001: Variable "BL_RunS" not referenced or never set, wasting memory!
+  6001: Variable "BL_RnDS" not referenced or never set, wasting memory!
+  6001: Variable "BL_RnTS" not referenced or never set, wasting memory!
+  6001: Variable "BL_RunU" not referenced or never set, wasting memory!
+  6001: Variable "BL_RnDU" not referenced or never set, wasting memory!
+  6001: Variable "BL_RnTU" not referenced or never set, wasting memory!
+  6001: Variable "BL_RunOn" not referenced or never set, wasting memory!
+  鈥?exited          command=makensis.exe code=0 pid=40836
+  鈥?executing       file=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\BaudLab-Setup-1.0.13.exe args= env={
+  "__COMPAT_LAYER": "RunAsInvoker"
+}
+  鈥?executed        file=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\BaudLab-Setup-1.0.13.exe
+  鈥?spawning        command=C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-3.0.4.1\Bin\makensis.exe -INPUTCHARSET UTF8 -DAPP_ID=com.serial-protocol-manager -DAPP_GUID=f5bf08b5-1e47-5802-9450-f23db4b4841a -DUNINSTALL_APP_KEY=f5bf08b5-1e47-5802-9450-f23db4b4841a -DPRODUCT_NAME=BaudLab -DPRODUCT_FILENAME=BaudLab -DAPP_FILENAME=BaudLab -DAPP_DESCRIPTION=涓插彛鍗忚绠＄悊宸ュ叿 - Electron + Vue 3 鐗?-DVERSION=1.0.13 -DPROJECT_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab -DBUILD_RESOURCES_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build -DAPP_PACKAGE_NAME=serial-protocol-manager -DMUI_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico -DMUI_UNICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico -DAPP_64=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z -DAPP_64_NAME=serial-protocol-manager-1.0.13-x64.nsis.7z -DAPP_64_HASH=B481BA4D08396201D3F578F8C339D11006940F313A6C5C56E0AE58AD6A89757C7C42BB0196502026D89EF4013866809BA7317B80E185DFE532B3FEDA99CEEB2E -DAPP_64_UNPACKED_SIZE=235929 -DCOMPANY_NAME=BaudLab -DAPP_INSTALLER_STORE_FILE=serial-protocol-manager-updater\installer.exe -DCOMPRESSION_METHOD=7z -DMULTIUSER_INSTALLMODE_ALLOW_ELEVATION -DINSTALL_MODE_PER_ALL_USERS_REQUIRED -DallowToChangeInstallationDirectory -DSHORTCUT_NAME=BaudLab -DUNINSTALL_DISPLAY_NAME=BaudLab 1.0.13 -DMUI_HEADERIMAGE -DMUI_HEADERIMAGE_RIGHT -DMUI_HEADERIMAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\header.bmp -DMUI_WELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp -DUNINSTALLER_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico -DMUI_UNWELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp -DESTIMATED_SIZE=235929 -DCOMPRESS=auto -DUNINSTALLER_OUT_FILE=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\__uninstaller-nsis-serial-protocol-manager.exe -XOutFile "D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\BaudLab-Setup-1.0.13.exe" -XVIProductVersion 1.0.13.0 -XVIAddVersionKey /LANG=1033 ProductName "BaudLab" -XVIAddVersionKey /LANG=1033 ProductVersion "1.0.13" -XVIAddVersionKey /LANG=1033 LegalCopyright "Copyright 漏 2026 BaudLab" -XVIAddVersionKey /LANG=1033 FileDescription "涓插彛鍗忚绠＄悊宸ュ叿 - Electron + Vue 3 鐗? -XVIAddVersionKey /LANG=1033 FileVersion "1.0.13" -XVIAddVersionKey /LANG=1033 CompanyName "BaudLab" -XUnicode true -XSetCompressor zlib - cwd=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\node_modules\app-builder-lib\templates\nsis
+Command line defined: "APP_ID=com.serial-protocol-manager"
+Command line defined: "APP_GUID=f5bf08b5-1e47-5802-9450-f23db4b4841a"
+Command line defined: "UNINSTALL_APP_KEY=f5bf08b5-1e47-5802-9450-f23db4b4841a"
+Command line defined: "PRODUCT_NAME=BaudLab"
+Command line defined: "PRODUCT_FILENAME=BaudLab"
+Command line defined: "APP_FILENAME=BaudLab"
+Command line defined: "APP_DESCRIPTION=串口协议管理工具 - Electron + Vue 3 版"
+Command line defined: "VERSION=1.0.13"
+Command line defined: "PROJECT_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab"
+Command line defined: "BUILD_RESOURCES_DIR=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build"
+Command line defined: "APP_PACKAGE_NAME=serial-protocol-manager"
+Command line defined: "MUI_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico"
+Command line defined: "MUI_UNICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico"
+Command line defined: "APP_64=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\serial-protocol-manager-1.0.13-x64.nsis.7z"
+Command line defined: "APP_64_NAME=serial-protocol-manager-1.0.13-x64.nsis.7z"
+Command line defined: "APP_64_HASH=B481BA4D08396201D3F578F8C339D11006940F313A6C5C56E0AE58AD6A89757C7C42BB0196502026D89EF4013866809BA7317B80E185DFE532B3FEDA99CEEB2E"
+Command line defined: "APP_64_UNPACKED_SIZE=235929"
+Command line defined: "COMPANY_NAME=BaudLab"
+Command line defined: "APP_INSTALLER_STORE_FILE=serial-protocol-manager-updater\installer.exe"
+Command line defined: "COMPRESSION_METHOD=7z"
+Command line defined: "MULTIUSER_INSTALLMODE_ALLOW_ELEVATION"
+Command line defined: "INSTALL_MODE_PER_ALL_USERS_REQUIRED"
+Command line defined: "allowToChangeInstallationDirectory"
+Command line defined: "SHORTCUT_NAME=BaudLab"
+Command line defined: "UNINSTALL_DISPLAY_NAME=BaudLab 1.0.13"
+Command line defined: "MUI_HEADERIMAGE"
+Command line defined: "MUI_HEADERIMAGE_RIGHT"
+Command line defined: "MUI_HEADERIMAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\header.bmp"
+Command line defined: "MUI_WELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp"
+Command line defined: "UNINSTALLER_ICON=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\assets\app.ico"
+Command line defined: "MUI_UNWELCOMEFINISHPAGE_BITMAP=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\build\welcome.bmp"
+Command line defined: "ESTIMATED_SIZE=235929"
+Command line defined: "COMPRESS=auto"
+Command line defined: "UNINSTALLER_OUT_FILE=D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\__uninstaller-nsis-serial-protocol-manager.exe"
+Processing config: C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-3.0.4.1\nsisconf.nsh
+Processing script file: "<stdin>" (UTF8)
+已复制         1 个文件。
+
+Processed 1 file, 10 command line commands, writing output (x86-unicode):
+warning 6001: Variable "BL_RnDS" not referenced or never set, wasting memory!
+warning 6001: Variable "BL_RnDU" not referenced or never set, wasting memory!
+
+Output: "D:\CJH_FILE\1_ProjectFile\ALVAN_UART_TOOL\BaudLab\BaudLab\dist2\BaudLab-Setup-1.0.13.exe"
+Install: 6 pages (384 bytes), 1 section (16408 bytes), 2812 instructions (78736 bytes), 1704 strings (12530 bytes), 1 language table (326 bytes).
+
+Using zlib compression.
+
+EXE header size:               67072 / 39424 bytes
+Install code:                  12137 / 109064 bytes
+Install data:               68368477 / 68759295 bytes
+CRC (0x8FA32B0E):                  4 / 4 bytes
+
+Total size:                 68447690 / 68907787 bytes (99.3%)
+
+2 warnings:
+  6001: Variable "BL_RnDS" not referenced or never set, wasting memory!
+  6001: Variable "BL_RnDU" not referenced or never set, wasting memory!
+  鈥?exited          command=makensis.exe code=0 pid=21340
