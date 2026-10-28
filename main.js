@@ -1484,7 +1484,9 @@ ipcMain.handle('team-server:choose-data-root', async () => {
 ipcMain.handle('team-server:set-data-root', (_event, dir) => {
   try {
     const r = teamServer.setDataRoot(dir);
-    if (!r || !r.success) return { success: false, error: (r && r.error) || '修改数据目录失败' };
+    /* 失败也原样带回 code（如 'running'）：渲染层靠它判断可先 stop 再重试，
+     * 只回传 error 会把这条自动恢复路径掐断，用户只能看到原始报错。 */
+    if (!r || !r.success) return { ...r, success: false, error: (r && r.error) || '修改数据目录失败' };
     if (r.changed) {
       fs.mkdirSync(path.dirname(teamServerRootPointer), { recursive: true });
       fs.writeFileSync(teamServerRootPointer, JSON.stringify({ dataRoot: r.dataRoot }, null, 2));

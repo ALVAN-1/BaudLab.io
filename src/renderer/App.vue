@@ -1899,6 +1899,14 @@ async function openTeamDirDialog() {
   try {
     const r = await ts.dataRoot();
     if (r && r.success && r.dataRoot) teamDirForm.path = r.dataRoot;
+    /* 本机团队服务器已在运行（如开机自恢复）：提前说明确认后会先自动停止，
+     * 免得用户点了「创建团队」才发现要停机。 */
+    if (ts.status) {
+      const st = await ts.status();
+      if (st && (st.running || st.starting)) {
+        Object.assign(teamDirForm, { ok: false, err: false, hint: '本机团队服务器正在运行，点「创建团队」会先自动停止再切换目录' });
+      }
+    }
   } catch { /* 读取失败就留空，用户可以手动浏览选择 */ }
 }
 
@@ -1929,11 +1937,17 @@ async function confirmCreateTeam() {
   Object.assign(teamDirForm, { ok: false, err: false, hint: '' });
   try {
     let r = await ts.setDataRoot(teamDirForm.path);
-    /* 服务端已在运行（例如从创建管理员页返回后再次点「创建团队」）且目录要换：
-     * 先停机才能让配置与数据库指向同一处，再试一次。 */
+    /* 服务端已在运行（例如开机自恢复后再次点「创建团队」）且目录要换：
+     * 先停机才能让配置与数据库指向同一处，再试一次。停机过程给出可见反馈。 */
     if ((!r || !r.success) && r && r.code === 'running' && ts.stop) {
+      Object.assign(teamDirForm, { ok: false, err: false, hint: '正在停止正在运行的团队服务器…' });
       const stopped = await ts.stop();
-      if (stopped && stopped.success) r = await ts.setDataRoot(teamDirForm.path);
+      if (stopped && stopped.success) {
+        r = await ts.setDataRoot(teamDirForm.path);
+      } else {
+        Object.assign(teamDirForm, { err: true, hint: '无法自动停止团队服务器，请手动停止后重试' });
+        return;
+      }
     }
     if (!r || !r.success) {
       Object.assign(teamDirForm, { err: true, hint: (r && r.error) || '保存数据目录失败' });
