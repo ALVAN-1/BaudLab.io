@@ -1657,6 +1657,11 @@ function finishAuth(user) {
     showLogin.value = false;
     authSuccess.value = false;
     resetLoginForms();
+    /* 刚创建完团队首次进入主界面：直接落到系统设置的后台配置区（数据库连接） */
+    if (justCreatedTeam.value) {
+      justCreatedTeam.value = false;
+      switchView('settings');
+    }
   }, 450);
   loadKnownUsers();
 }
@@ -1884,6 +1889,8 @@ function applyLoginServer(d) {
  * 不与本机协议库共用路径。弹窗确认后才真正启动内嵌服务器。 */
 const showTeamDirDialog = ref(false);
 const teamDirForm = reactive({ path: '', busy: false, hint: '', ok: false, err: false });
+/* 刚在本机创建过团队：登录进入主界面后自动落到系统设置（数据库连接 = 应用内后台配置区） */
+const justCreatedTeam = ref(false);
 const TEAM_DIR_DEFAULT_HINT = '团队数据库、服务端配置与备份会保存到这个文件夹';
 
 function teamServerApi() {
@@ -1957,7 +1964,14 @@ async function confirmCreateTeam() {
       Object.assign(teamDirForm, { ok: true, hint: r.notes.join('；') });
     }
     await becomeHostAndConnect();
-    if (serverReady.value) { showTeamDirDialog.value = false; return; }
+    if (serverReady.value) {
+      showTeamDirDialog.value = false;
+      /* 团队已创建：立即在系统浏览器打开内置管理台（/admin，仅本机免登录），
+       * 成员/角色/邮件/令牌/备份等后台配置直接可达；打开失败不影响创建流程。 */
+      justCreatedTeam.value = true;
+      if (ts.openAdmin) { try { await ts.openAdmin(); } catch { /* 忽略 */ } }
+      return;
+    }
     Object.assign(teamDirForm, { err: true, hint: loginError.value || '启动团队服务器失败，请重试' });
   } catch (e) {
     Object.assign(teamDirForm, { err: true, hint: String(e.message || e) });
