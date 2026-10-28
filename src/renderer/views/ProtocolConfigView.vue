@@ -236,6 +236,13 @@
                     class="btn btn-success btn-small protocol-review-btn"
                     disabled
                   >已生效</button>
+                  <!-- 管理员特权：草稿/已驳回的协议可跳过审核直接发布 -->
+                  <button
+                    v-if="isAdmin && (!proto.reviewStatus || proto.reviewStatus === 'rejected')"
+                    class="btn btn-success btn-small protocol-review-btn"
+                    title="跳过审核，直接发布生效（仅管理员）"
+                    @click.stop="directPublishProtocol(proto)"
+                  >直接发布</button>
                   <button
                     class="btn btn-danger btn-small protocol-delete-btn"
                     title="删除协议"
@@ -987,7 +994,7 @@ import { useReviewQueue } from '../composables/useReviewQueue';
 import { useCurrentUser } from '../composables/useCurrentUser';
 
 /* ===================== 共享审核队列 ===================== */
-const { submitReview, publishReview, reviewQueue, isLoaded: reviewLoaded } = useReviewQueue();
+const { submitReview, publishReview, directPublishReview, reviewQueue, isLoaded: reviewLoaded } = useReviewQueue();
 
 /**
  * 根据审核队列同步每个协议的最新审核状态
@@ -1020,6 +1027,9 @@ watch(reviewQueue, () => {
 
 /* ===================== 当前用户 ===================== */
 const { currentUser, getReviewCandidates, loadKnownUsers, isLoaded } = useCurrentUser();
+
+/* 管理员身份：直接发布按钮显隐依据（与审核队列页发布权限同一判据） */
+const isAdmin = computed(() => !!currentUser.value?.isAdmin);
 
 /* ===================== Electron API 检测 ===================== */
 const hasElectron = typeof window !== 'undefined' && typeof window.electronAPI !== 'undefined';
@@ -2562,25 +2572,22 @@ async function submitForReview(proto) {
 }
 
 /**
- * 确认提交审核：保存当前协议快照到 protocol_versions，
- * 对比上一版快照生成真实 diff，写入审核队列
+ * 构建送审/直发共用载荷：捕获快照 → 查基线版本 → 生成真实 diff。
+ * 返回 null 表示前置条件不满足（内部已 toast 提示）。
+ * 直接发布与提交审核共用，保证两者内容与对比口径完全一致。
+ * @param {object} proto - 协议列表项
  */
-async function confirmSubmitReview() {
-  if (!reviewerDialog.selectedUser || !reviewerDialog.proto) return;
-
-  const proto = reviewerDialog.proto;
+async function buildReviewPayload(proto) {
   const displayName = proto.name;
-  const assignee = reviewerDialog.selectedUser.name;
 
-  try {
-    /* 1. 捕获新快照。只有提交的就是当前编辑中的协议时，编辑器状态才是它的内容；
-     * 提交列表里其他协议时编辑器里装的是别的协议，必须取该协议自身的已保存配置，
-     * 否则快照与基线对比整个串到别的协议（通过后发布还会把别的协议内容写进本协议） */
-    const isProtoActive = proto.name === activeProtocol.value;
-    if (!isProtoActive && !proto.config) {
-      showToast('该协议的配置内容尚未加载，请先在列表中点击选中后再提交审核', 'error');
-      return;
-    }
+  /* 1. 捕获新快照。只有提交的就是当前编辑中的协议时，编辑器状态才是它的内容；
+   * 提交列表里其他协议时编辑器里装的是别的协议，必须取该协议自身的已保存配置，
+   * 否则快照与基线对比整个串到别的协议（通过后发布还会把别的协议内容写进本协议） */
+  const isProtoActive = proto.name === activeProtocol.value;
+  if (!isProtoActive && !proto.config) {
+    showToast('该协议的配置内容尚未加载，请先在列表中点击选中后再提交审核', 'error');
+    return null;
+  }
     const newSnap = isProtoActive
       ? captureEditorState()
       : JSON.parse(JSON.stringify(proto.config));
@@ -2677,17 +2684,39 @@ async function confirmSubmitReview() {
       ? generateProtocolDiff(oldSnap, newSnap)
       : { summary: { added: 0, deleted: 0, modified: 0, unchanged: 0, items: [{ type: 'add', text: '首次提交，无历史版本' }] }, oldVersion: { name: '—', version: '—', signalCount: 0, addressCount: 0 }, newVersion: { name: displayName, version: versionStr, signalCount: (newSnap.commands || []).length, addressCount: (newSnap.moduleAddresses || []).length }, metaChanges: [], commandRows: (newSnap.commands || []).map(function(c) { return { status: 'added', old: null, new: { cmd: c.cmd, name: c.name || '未命名', sender: c.sender || '—', receiver: c.receiver || '—', dir: c.dir || '—', cycle: c.cycle || '0', payloadLen: c.payloadLen || 0, fieldCount: (c.fields || []).length, fieldNames: [] } }; }) };
 
-    /* 4. 提交审核（快照 + base_version_id 存入审核记录） */
-    var changeId = await submitReview({
-      name: displayName,
+  return {
+    displayName,
+    newSnapJson,
+    versionStr,
+    diff,
+    baseVersionId,
+  };
+}
+
+/**
+ * 确认提交审核：快照与 diff 存入审核记录（pending），等待审核人处理
+ */
+async function confirmSubmitReview() {
+  if (!reviewerDialog.selectedUser || !reviewerDialog.proto) return;
+
+  const proto = reviewerDialog.proto;
+  const assignee = reviewerDialog.selectedUser.name;
+
+  try {
+    const payload = await buildReviewPayload(proto);
+    if (!payload) return;
+
+    /* 提交审核（快照 + base_version_id 存入审核记录） */
+    const changeId = await submitReview({
+      name: payload.displayName,
       type: '协议变更',
       applicant: currentUser.value?.username || currentUser.value?.name || '当前用户',
       assignee: assignee,
       scope: '协议配置',
-      diff: diff,
-      snapshot: newSnapJson,
-      version: versionStr,
-      baseVersionId: baseVersionId,
+      diff: payload.diff,
+      snapshot: payload.newSnapJson,
+      version: payload.versionStr,
+      baseVersionId: payload.baseVersionId,
     });
 
     proto.reviewStatus = 'pending';
@@ -2698,6 +2727,48 @@ async function confirmSubmitReview() {
     showToast(`协议「${proto.name}」已提交审核，指定审核人：${assignee}`, 'success');
   } catch {
     showToast('提交审核失败，请重试', 'error');
+  }
+}
+
+/* ===================== 管理员直接发布 ===================== */
+
+/**
+ * 管理员直接发布：跳过审核一步发布生效（服务端仅管理员可插入 published 审核记录）。
+ * 与送审共用快照/基线/diff 构建，正式内容落地与审核通过后的发布完全同构。
+ * @param {object} proto - 协议列表项
+ */
+async function directPublishProtocol(proto) {
+  if (!isAdmin.value) {
+    showToast('仅管理员可以直接发布协议版本', 'error');
+    return;
+  }
+  if (proto.reviewStatus === 'pending') {
+    showToast('该协议正在审核中，请先撤回审核再直接发布', 'error');
+    return;
+  }
+  if (proto.reviewStatus === 'approved' || proto.reviewStatus === 'published') {
+    showToast('该协议已审核通过，请使用「发布生效」', 'error');
+    return;
+  }
+  try {
+    const payload = await buildReviewPayload(proto);
+    if (!payload) return;
+    const changeId = await directPublishReview({
+      name: payload.displayName,
+      type: '协议变更',
+      applicant: currentUser.value?.username || currentUser.value?.name || '当前用户',
+      scope: '协议配置',
+      diff: payload.diff,
+      snapshot: payload.newSnapJson,
+      version: payload.versionStr,
+      baseVersionId: payload.baseVersionId,
+    });
+    proto.reviewStatus = 'published';
+    proto.changeId = changeId;
+    proto.draftDirty = false;
+    showToast(`协议「${proto.name}」已直接发布生效（变更单号 ${changeId}）`, 'success');
+  } catch {
+    showToast('直接发布失败，请重试', 'error');
   }
 }
 

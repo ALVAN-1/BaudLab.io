@@ -519,6 +519,8 @@ function runBatch(stmts) {
  *   - users 表的 api_token 列禁止经网关修改（令牌只由服务器签发）
  *   - 审核流自审拦截（问题 #4）：approved/rejected/published 状态变更
  *     要求操作人 ≠ 申请人；withdrawn 要求操作人 = 申请人
+ *   - 管理员直接发布：audit_logs 插入即 published 仅限管理员
+ *     （客户端「直接发布」按钮），留痕 opinion=管理员直接发布；非管理员仍只能提交 pending
  *   - 管理死锁防护：users 表锁定自己、锁定/删除最后一个可用管理员一律拒绝
  *   - 所有写操作落 app_logs 审计（操作人 + 动词 + 表）
  */
@@ -665,6 +667,12 @@ function checkWritePermission(op, verb, table, sql, params) {
       const applicant = getInsertColumnValue(sql, params, 'applicant');
       if (applicant != null && String(applicant) !== op.username) {
         throw new Error('只能以本人身份提交审核申请');
+      }
+      /* 管理员直接发布：插入即 published（跳过审核）仅限管理员；
+       * 非管理员仍只能提交 pending，UPDATE 侧 approved 流转规则不变 */
+      const insStatus = getInsertColumnValue(sql, params, 'status');
+      if (insStatus === 'published' && op.role !== '管理员') {
+        throw new Error('服务端校验：仅管理员可以直接发布协议版本');
       }
     } else if (verb === 'UPDATE') {
       const statusIdx = sqlParamIndexOf(sql, 'status');

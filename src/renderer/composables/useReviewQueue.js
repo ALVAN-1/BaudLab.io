@@ -57,16 +57,22 @@ async function loadFromDatabase(force = false) {
   isLoaded.value = true;
 }
 
+/** 生成变更单号（CR-年份-序号）与本地时间串，送审与直接发布共用 */
+function nextChangeRef() {
+  const changeId = `CR-${new Date().getFullYear()}-${String(crCounter++).padStart(4, '0')}`;
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return { changeId, timeStr };
+}
+
 /**
  * 提交审核：将协议变更加入审核队列并写入数据库
  * @param {object} proto - 协议信息 { name, version, type?, applicant?, assignee }
  * @returns {string} 生成的变更单号
  */
 async function submitReview(proto) {
-  const changeId = `CR-${new Date().getFullYear()}-${String(crCounter++).padStart(4, '0')}`;
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const { changeId, timeStr } = nextChangeRef();
 
   const entry = {
     changeId,
@@ -300,6 +306,75 @@ async function publishReview(changeId) {
 }
 
 /**
+ * 管理员直接发布：跳过审核一步发布生效。
+ * 服务端网关仅允许管理员插入 status='published' 的审核记录，其他人仍走送审流程。
+ * 单事务原子写入：审核记录（published，留痕“管理员直接发布”）→ 快照落地正式内容
+ * → 发版 → 版本指针 → 废弃草稿快照。
+ * @param {object} proto - { name, type?, applicant?, scope?, diff?, snapshot, version?, baseVersionId? }
+ * @returns {string} 生成的变更单号
+ */
+async function directPublishReview(proto) {
+  const { changeId, timeStr } = nextChangeRef();
+
+  const entry = {
+    changeId,
+    title: proto.name,
+    type: proto.type || '协议变更',
+    applicant: proto.applicant || '当前用户',
+    assignee: '',
+    time: timeStr,
+    scope: proto.scope || '协议配置',
+    status: 'published',
+    diff: proto.diff || [{ old: '—', new: '管理员直接发布，跳过审核' }],
+    opinion: '管理员直接发布，跳过审核',
+    snapshot: proto.snapshot || '',
+    version: proto.version || '',
+    baseVersionId: proto.baseVersionId || null,
+  };
+
+  if (typeof window !== 'undefined' && window.electronAPI?.db) {
+    const statements = [];
+
+    /* 1. 审核记录直接以 published 入库（仅管理员可通过网关校验），全程留痕可查 */
+    statements.push({
+      sql: 'INSERT INTO audit_logs (change_id, protocol_name, change_type, applicant, assignee, scope, status, diff_json, opinion, snapshot_json, version, base_version_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      params: [entry.changeId, entry.title, entry.type, entry.applicant, entry.assignee, entry.scope, entry.status, JSON.stringify(entry.diff), entry.opinion, entry.snapshot, entry.version, entry.baseVersionId],
+    });
+
+    /* 2. 快照落地为正式协议内容（protocols/commands/modules），与审核通过后的发布同构 */
+    const content = snapshotContentStatements(entry.title, entry.snapshot);
+    if (content) statements.push(...content.stmts);
+
+    /* 3. 发版到 protocol_versions（status='published'）+ 版本指针 */
+    if (entry.snapshot) {
+      const versionStr = content ? content.versionStr : (entry.version || 'v1.0.0');
+      statements.push({
+        sql: 'INSERT INTO protocol_versions (protocol_id, protocol_name, version, config_json, status, created_by) VALUES ((SELECT id FROM protocols WHERE name = ?), ?, ?, ?, ?, ?)',
+        params: [entry.title, entry.title, versionStr, entry.snapshot, 'published', entry.applicant || ''],
+      });
+      statements.push({
+        sql: `UPDATE protocols SET current_version_id = (SELECT id FROM protocol_versions WHERE protocol_name = ? AND version = ? ORDER BY id DESC LIMIT 1) WHERE name = ?`,
+        params: [entry.title, versionStr, entry.title],
+      });
+    }
+
+    /* 4. 发版后：该协议其余 draft 快照已被超越，标记废弃 */
+    statements.push({
+      sql: 'UPDATE protocol_versions SET status = ? WHERE protocol_name = ? AND status = ?',
+      params: ['deprecated', entry.title, 'draft'],
+    });
+
+    const result = await window.electronAPI.db.batch(statements);
+    if (!result.success) throw new Error(result.error || '直接发布失败');
+  }
+
+  /* DB 写入成功后再更新共享队列（审核页与协议页共用） */
+  reviewQueue.value.unshift({ ...entry });
+
+  return changeId;
+}
+
+/**
  * 获取变更详情
  * @param {string} changeId
  * @returns {object} { title, type, diff }
@@ -349,6 +424,7 @@ export function useReviewQueue() {
     submitReview,
     updateReviewStatus,
     publishReview,
+    directPublishReview,
     getReviewDetail,
     loadFromDatabase,
     startPolling,
