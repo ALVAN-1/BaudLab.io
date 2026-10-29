@@ -2778,10 +2778,25 @@ body.light .seg-card-table tr.group .seg-card-label {
   opacity: 1;
 }
 
-/* 审核中 / 已通过时始终显示 */
-.protocol-review-btn.btn-success {
+/* 审核通过 / 已生效状态按钮始终显示；直接发布按钮除外（它和提交审核一样是动作按钮） */
+.protocol-review-btn.btn-success:not(.protocol-direct-publish-btn) {
   opacity: 1;
+}
+
+/* 已生效为禁用态，不响应鼠标悬停 */
+.protocol-review-btn.btn-success:disabled {
   pointer-events: none;
+}
+
+/* 管理员直接发布：与提交审核/删除一致，默认隐藏、hover 显示且可点击
+ * （须位于上方 btn-success 规则之后，覆盖其 opacity 与 pointer-events） */
+.protocol-review-btn.protocol-direct-publish-btn {
+  opacity: 0;
+  pointer-events: auto;
+}
+
+.protocol-card:hover .protocol-review-btn.protocol-direct-publish-btn {
+  opacity: 1;
 }
 
 .protocol-review-btn.btn-pending {

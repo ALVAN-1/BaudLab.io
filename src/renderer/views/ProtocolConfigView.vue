@@ -239,7 +239,7 @@
                   <!-- 管理员特权：草稿/已驳回的协议可跳过审核直接发布 -->
                   <button
                     v-if="isAdmin && (!proto.reviewStatus || proto.reviewStatus === 'rejected')"
-                    class="btn btn-success btn-small protocol-review-btn"
+                    class="btn btn-success btn-small protocol-review-btn protocol-direct-publish-btn"
                     title="跳过审核，直接发布生效（仅管理员）"
                     @click.stop="directPublishProtocol(proto)"
                   >直接发布</button>
