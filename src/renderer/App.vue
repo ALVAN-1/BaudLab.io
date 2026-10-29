@@ -1067,7 +1067,7 @@
           <HelpView v-show="currentView === 'help'" id="view-help" class="view" :class="{ active: currentView === 'help' }" />
           <FeedbackView v-show="currentView === 'feedback'" id="view-feedback" class="view" :class="{ active: currentView === 'feedback' }" />
           <CustomBoardView v-show="currentView === 'board'" id="view-board" class="view" :class="{ active: currentView === 'board' }" />
-          <ProtocolPreviewView v-show="currentView === 'protocol-preview'" id="view-protocol-preview" class="view" :class="{ active: currentView === 'protocol-preview' }" />
+          <ProtocolPreviewView v-show="currentView === 'protocol-preview'" id="view-protocol-preview" class="view" :class="{ active: currentView === 'protocol-preview' }" :active="currentView === 'protocol-preview'" />
           <AiChatView v-show="currentView === 'ai-chat'" id="view-ai-chat" class="view" :class="{ active: currentView === 'ai-chat' }" :active="currentView === 'ai-chat'" />
         </template>
         </main>

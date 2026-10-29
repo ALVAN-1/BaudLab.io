@@ -266,7 +266,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
+
+const props = defineProps({
+  /* 由 App.vue 传入：本页签是否处于激活状态（每次切到预览页都刷新协议列表） */
+  active: { type: Boolean, default: false },
+});
 
 const hasElectron = typeof window !== 'undefined' && typeof window.electronAPI !== 'undefined';
 
@@ -331,7 +336,10 @@ async function loadProtocols() {
       });
     }
     protocols.value = list;
-    if (list.length > 0) await selectProtocol(list[0]);
+    /* 保留当前选中项；若尚未选择或已被删除，则选中第一个 */
+    const current = list.find((p) => p.id === selectedId.value);
+    if (current) await selectProtocol(current);
+    else if (list.length > 0) await selectProtocol(list[0]);
   } finally {
     loading.value = false;
   }
@@ -478,6 +486,11 @@ function printDoc() {
 }
 
 onMounted(() => { loadProtocols(); });
+
+/* 每次切到本页签都重新加载：发布生效/保存草稿后新协议才能出现在预览中（v-show 常驻不重新挂载） */
+watch(() => props.active, (isActive) => {
+  if (isActive) loadProtocols();
+});
 </script>
 
 <style scoped>

@@ -256,9 +256,11 @@ async function publishReview(changeId) {
   if (typeof window !== 'undefined' && window.electronAPI?.db) {
     const statements = [];
 
-    /* 1. 审核通过的快照落地为正式协议内容（protocols/commands/modules） */
+    /* 1. 审核通过的快照落地为正式协议内容（protocols/commands/modules）。
+     * 快照缺失时直接失败：否则只写审核状态、正式表无内容，出现“已生效却无处可见”的断层数据 */
     const content = snapshotContentStatements(item.title, item.snapshot);
-    if (content) statements.push(...content.stmts);
+    if (!content) throw new Error('审核记录缺少有效快照，无法发布生效；请重新提交审核后再发布');
+    statements.push(...content.stmts);
 
     /* 2. 快照发版到 protocol_versions（status='published'）+ 版本指针 */
     if (item.snapshot) {
@@ -341,9 +343,11 @@ async function directPublishReview(proto) {
       params: [entry.changeId, entry.title, entry.type, entry.applicant, entry.assignee, entry.scope, entry.status, JSON.stringify(entry.diff), entry.opinion, entry.snapshot, entry.version, entry.baseVersionId],
     });
 
-    /* 2. 快照落地为正式协议内容（protocols/commands/modules），与审核通过后的发布同构 */
+    /* 2. 快照落地为正式协议内容（protocols/commands/modules），与审核通过后的发布同构。
+     * 快照缺失时直接失败，避免只留审核记录、正式表无内容 */
     const content = snapshotContentStatements(entry.title, entry.snapshot);
-    if (content) statements.push(...content.stmts);
+    if (!content) throw new Error('协议快照缺失，无法直接发布；请先在协议页保存草稿后重试');
+    statements.push(...content.stmts);
 
     /* 3. 发版到 protocol_versions（status='published'）+ 版本指针 */
     if (entry.snapshot) {
