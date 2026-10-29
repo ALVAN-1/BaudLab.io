@@ -3479,6 +3479,12 @@ body.light .seg-card-table tr.group .seg-card-label {
   height: 14px;
 }
 
+/* 放大态命令字面板头部的保存按钮：与编辑器头部保存按钮同一动作，仅放大时渲染 */
+.panel-header .panel-header-save {
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
 .panel-header-btn {
   background: transparent;
   border: none;

@@ -552,6 +552,15 @@
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
               </button>
+              <!-- 放大态专用：遮罩盖住编辑器头部的保存按钮，此处补一个同动作入口 -->
+              <button
+                v-if="commandPanelExpanded"
+                class="btn btn-primary btn-small panel-header-save"
+                type="button"
+                @click.stop="saveConfig"
+              >
+                {{ saveStatus }}
+              </button>
             </div>
             <div class="panel-body">
               <div class="command-editor-layout">
