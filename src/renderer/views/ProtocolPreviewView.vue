@@ -53,136 +53,134 @@
           <p>从左侧选择一个协议查看文档</p>
         </div>
 
-        <!-- 默认预览：可交互树形视图 -->
-        <div v-else-if="viewMode === 'default'" class="doc-scroll tree-view">
+        <!-- 默认预览：cmd-master-table 扁平大表 -->
+        <div v-else-if="viewMode === 'default'" class="doc-scroll master-view">
           <h1 class="doc-title">{{ selectedProtocol.name }}</h1>
           <p class="doc-version">版本 {{ selectedProtocol.version }} · 更新于 {{ selectedProtocol.updated_at }}</p>
           <p v-if="selectedProtocol.protoDesc" class="doc-desc">{{ selectedProtocol.protoDesc }}</p>
 
-          <h2 class="tree-h2">帧结构</h2>
-          <div class="tree-frame-info">
+          <h2 class="master-h2">帧结构</h2>
+          <div class="master-frame-info">
             <div><b>字节序：</b>{{ selectedProtocol.endianness || '小端 (Little-Endian)' }}</div>
             <div><b>校验方式：</b>{{ selectedProtocol.checkType || 'CRC16-MODBUS' }}</div>
             <div><b>校验范围：</b>{{ selectedProtocol.checkStart || 'SOF' }} → {{ selectedProtocol.checkEnd || 'DATA' }}</div>
             <div><b>帧模式：</b>{{ selectedProtocol.frameMode || 'fixed' }}</div>
           </div>
 
-          <h2 class="tree-h2">模块地址</h2>
-          <div class="tree-modules">
-            <div v-for="m in selectedProtocol.modules" :key="m.name" class="tree-module-row">
-              <span class="tree-module-name">{{ m.name }}</span>
-              <code class="tree-module-addr">{{ m.addressBytes?.join(' ') || m.address || '—' }}</code>
+          <h2 class="master-h2">模块地址</h2>
+          <div class="master-modules">
+            <div v-for="m in selectedProtocol.modules" :key="m.name" class="master-module-row">
+              <span class="master-module-name">{{ m.name }}</span>
+              <code class="master-module-addr">{{ m.addressBytes?.join(' ') || m.address || '—' }}</code>
             </div>
-            <p v-if="!selectedProtocol.modules?.length" class="tree-muted">无模块地址定义</p>
+            <p v-if="!selectedProtocol.modules?.length" class="master-muted">无模块地址定义</p>
           </div>
 
-          <h2 class="tree-h2">命令列表</h2>
-          <div v-for="cmd in selectedProtocol.commands" :key="cmd.cmd + cmd.name" class="tree-node">
-            <div
-              class="tree-node-head"
-              :class="{ collapsed: !expanded[cmdKey(cmd)] }"
-              @click="toggleNode(cmd)"
+          <h2 class="master-h2">命令字汇总表</h2>
+
+          <!-- 筛选条 -->
+          <div class="cmd-filter-bar">
+            <button
+              v-for="cat in ['all', 'general', 'control', 'fault', 'status', 'query', 'config', 'response']"
+              :key="cat"
+              class="filter-btn"
+              :class="{ active: catFilter === cat }"
+              @click="catFilter = cat"
             >
-              <span class="tree-chevron" aria-hidden="true">
-                <svg viewBox="0 0 16 16" width="12" height="12"><path d="M5 3l5.5 5-5.5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <span class="tree-cmd-name">{{ cmd.name }}</span>
-              <span class="tree-cmd-code">{{ cmd.cmd }}</span>
-              <span class="tree-cmd-dir" :class="cmd.dir === 'tx' ? 'tx' : 'rx'">{{ cmd.dir === 'tx' ? '发送' : '接收' }}</span>
-              <span v-if="cmd.cycle && cmd.cycle !== '0'" class="tree-cmd-cycle">{{ cmd.cycle }}ms</span>
-            </div>
-            <div v-show="expanded[cmdKey(cmd)]" class="tree-node-body">
-              <div class="tree-cmd-meta">
-                <span>发送方：{{ cmd.sender || '—' }}</span>
-                <span>接收方：{{ cmd.receiver || '—' }}</span>
-              </div>
-              <table v-if="cmd.fields?.length" class="tree-table">
-                <thead><tr><th>字段名</th><th>偏移</th><th>长度</th><th>类型</th><th>缩放</th><th>单位</th><th>配置</th></tr></thead>
-                <tbody>
-                  <tr v-for="field in cmd.fields" :key="field.name">
-                    <td>{{ field.name }}</td>
-                    <td>{{ field.offset }}</td>
-                    <td>{{ field.length }}</td>
-                    <td>{{ typeLabel(field.type) }}</td>
-                    <td>{{ field.scale ?? '—' }}</td>
-                    <td>{{ field.unit || '—' }}</td>
-                    <td class="tree-field-config">{{ fieldConfigText(field) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <p v-else class="tree-muted">无字段定义</p>
-
-              <!-- 按字段类型分组展示专属定义（而非统一位域） -->
-              <!-- 位域字段 -->
-              <template v-if="cmd.fields?.some(f => f.type === 'bitfield')">
-                <div class="tree-sub-title">位域定义</div>
-                <div v-for="field in cmd.fields.filter(f => f.type === 'bitfield')" :key="field.name" class="tree-field-block">
-                  <div class="tree-field-label"><code>{{ field.name }}</code></div>
-                  <table class="tree-table">
-                    <thead><tr><th style="width:80px;">位</th><th>0 含义</th><th>1 含义</th></tr></thead>
-                    <tbody>
-                      <tr v-for="bit in field.bits" :key="bit.bit">
-                        <td>bit{{ bit.bit }}</td>
-                        <td>{{ bit.zero || '—' }}</td>
-                        <td>{{ bit.one || '—' }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </template>
-              <!-- 枚举字段 -->
-              <template v-if="cmd.fields?.some(f => f.type === 'enum')">
-                <div class="tree-sub-title">枚举定义</div>
-                <div v-for="field in cmd.fields.filter(f => f.type === 'enum')" :key="field.name" class="tree-field-block">
-                  <div class="tree-field-label"><code>{{ field.name }}</code></div>
-                  <table class="tree-table">
-                    <thead><tr><th style="width:100px;">值</th><th>含义</th></tr></thead>
-                    <tbody>
-                      <tr v-for="opt in field.enumItems" :key="opt.value">
-                        <td><code>0x{{ String(opt.value).toUpperCase().padStart(2, '0') }}</code></td>
-                        <td>{{ opt.meaning || '—' }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </template>
-              <!-- 原始数值字段 -->
-              <template v-if="cmd.fields?.some(f => f.type === 'raw')">
-                <div class="tree-sub-title">原始数值</div>
-                <div v-for="field in cmd.fields.filter(f => f.type === 'raw')" :key="field.name" class="tree-field-block tree-field-inline">
-                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
-                  <span class="tree-kv"><span class="tree-kv-k">默认值</span><code class="tree-kv-v">0x{{ String(field.rawValue || '00').toUpperCase().padStart(2, '0') }}</code></span>
-                </div>
-              </template>
-              <!-- 多字节整数字段 -->
-              <template v-if="cmd.fields?.some(f => f.type === 'number')">
-                <div class="tree-sub-title">整数字段</div>
-                <div v-for="field in cmd.fields.filter(f => f.type === 'number')" :key="field.name" class="tree-field-block tree-field-inline">
-                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
-                  <span class="tree-kv"><span class="tree-kv-k">编码</span><code class="tree-kv-v">{{ field.encoding || 'uint8' }}</code></span>
-                  <span class="tree-kv" v-if="field.scale"><span class="tree-kv-k">缩放</span><code class="tree-kv-v">×{{ field.scale }}</code></span>
-                  <span class="tree-kv" v-if="field.unit"><span class="tree-kv-k">单位</span><code class="tree-kv-v">{{ field.unit }}</code></span>
-                </div>
-              </template>
-              <!-- 文本/JSON 字段 -->
-              <template v-if="cmd.fields?.some(f => f.type === 'text')">
-                <div class="tree-sub-title">文本字段</div>
-                <div v-for="field in cmd.fields.filter(f => f.type === 'text')" :key="field.name" class="tree-field-block tree-field-inline">
-                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
-                  <span class="tree-kv"><span class="tree-kv-k">长度</span><code class="tree-kv-v">{{ lengthModeText(field) }}</code></span>
-                  <span class="tree-kv" v-if="field.encoding"><span class="tree-kv-k">编码</span><code class="tree-kv-v">{{ field.encoding }}</code></span>
-                </div>
-              </template>
-              <!-- 二进制段字段 -->
-              <template v-if="cmd.fields?.some(f => f.type === 'binary')">
-                <div class="tree-sub-title">二进制段</div>
-                <div v-for="field in cmd.fields.filter(f => f.type === 'binary')" :key="field.name" class="tree-field-block tree-field-inline">
-                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
-                  <span class="tree-kv"><span class="tree-kv-k">长度</span><code class="tree-kv-v">{{ lengthModeText(field) }}</code></span>
-                </div>
-              </template>
+              {{ catFilterLabel(cat) }}<span class="filter-count">{{ catCount(cat) }}</span>
+            </button>
+            <div class="filter-dropdowns">
+              <select class="input filter-select" v-model="senderFilter">
+                <option value="">发送方：全部</option>
+                <option v-for="s in senderOptions" :key="s" :value="s">{{ s }}</option>
+              </select>
+              <select class="input filter-select" v-model="receiverFilter">
+                <option value="">接收方：全部</option>
+                <option v-for="r in receiverOptions" :key="r" :value="r">{{ r }}</option>
+              </select>
             </div>
           </div>
+
+          <!-- 主表 -->
+          <div class="cmd-table-wrap">
+            <table class="cmd-table">
+              <thead>
+                <tr>
+                  <th style="width:80px;">命令字</th>
+                  <th>指令名称</th>
+                  <th style="width:100px;">类别</th>
+                  <th style="width:110px;">发送方</th>
+                  <th style="width:110px;">接收方</th>
+                  <th class="th-bit-toggle" style="width:90px;">查看bit</th>
+                  <th>数据段格式</th>
+                  <th style="width:120px;">说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="cmd in filteredCommands" :key="cmd.cmd + cmd.name" class="cmd-row">
+                  <td><span class="cmd-code">{{ cmd.cmd }}</span></td>
+                  <td>
+                    <span class="cmd-name">{{ cmd.name }}</span>
+                    <span v-if="cmd.dir === 'rx'" class="cmd-dir-badge rx">接收</span>
+                  </td>
+                  <td><span class="tag" :class="catTagClass(cmd)">{{ cmdCategory(cmd) }}</span></td>
+                  <td class="cmd-sender">{{ cmd.sender || '—' }}</td>
+                  <td class="cmd-receiver">{{ cmd.receiver || '—' }}</td>
+                  <td class="td-bit-toggle">
+                    <label v-if="hasBitDetails(cmd)" class="bit-toggle">
+                      <input type="checkbox" :checked="!!bitOpenMap[cmdKey(cmd)]" @change="toggleBit(cmd)">
+                      <span class="bit-track"><span class="bit-knob"></span></span>
+                      <span class="bit-label">{{ bitOpenMap[cmdKey(cmd)] ? '查看解析 ▼' : '查看解析 ▸' }}</span>
+                    </label>
+                    <span v-else class="master-muted" style="font-size:11px;">—</span>
+                  </td>
+                  <td>
+                    <!-- 无字段 -->
+                    <span v-if="!cmd.fields?.length" class="df-noop">0x00（无数据）</span>
+                    <!-- 字段色块行 -->
+                    <div v-else class="df-visual">
+                      <div class="df-field-row">
+                        <div
+                          v-for="(f, fi) in cmd.fields"
+                          :key="f.name"
+                          class="df-block"
+                          :class="dfSizeClass(f) + ' df-c' + (fi % DF_COLORS)"
+                        >
+                          <span class="df-bname">{{ f.name }}</span>
+                          <span class="df-bsize">{{ f.length || 1 }}B · {{ typeLabel(f.type) }}</span>
+                        </div>
+                      </div>
+                      <!-- 展开的位域/枚举详情 -->
+                      <div v-if="hasBitDetails(cmd) && bitOpenMap[cmdKey(cmd)]" class="bit-details-open">
+                        <!-- 位域 -->
+                        <div v-for="f in cmd.fields.filter(f => f.type === 'bitfield')" :key="f.name" class="bit-byte-row">
+                          <div class="bit-byte-tag" :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)">{{ f.name }}</div>
+                          <div class="bit-byte-bits">
+                            <div v-for="bitNum in [7,6,5,4,3,2,1,0]" :key="bitNum" class="bit-cell" :class="isReservedBit(f, bitNum) ? 'df-bit-reserved' : 'df-bit-defined'">
+                              <span class="bit-bi">Bit{{ bitNum }}</span>
+                              <span class="bit-bv">{{ (f.bits[bitNum] && f.bits[bitNum].one) || '—' }}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- 枚举 -->
+                        <div v-for="f in cmd.fields.filter(f => f.type === 'enum')" :key="f.name" class="bit-byte-row">
+                          <div class="bit-byte-tag" :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)">{{ f.name }}</div>
+                          <div class="bit-byte-bits">
+                            <div v-for="opt in f.enumItems" :key="opt.value" class="bit-cell df-bit-defined">
+                              <span class="bit-bi">0x{{ String(opt.value).toUpperCase().padStart(2, '0') }}</span>
+                              <span class="bit-bv">{{ opt.meaning || '—' }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="cmd-desc">{{ cmdDesc(cmd) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-if="filteredCommands.length === 0" class="master-muted" style="text-align:center;padding:20px;">无匹配命令</p>
         </div>
 
         <!-- Markdown 视图 -->
@@ -414,24 +412,113 @@ const selectedId = ref(null);
 const selectedProtocol = ref(null);
 const viewMode = ref('default');
 const searchText = ref('');
-/* 默认预览：每条命令的展开状态，按 cmd+name 作为 key（协议数据未变时展开状态保持稳定） */
-const expanded = reactive({});
+/* 默认预览：cmd-master-table —— bit 展开开关状态（按 cmd+name 稳定 key） */
+const DF_COLORS = 6;
+const CAT_NAMES = {
+  general: '通用', control: '控制', fault: '故障',
+  status: '状态', query: '查询', config: '配置', response: '响应',
+};
+const CAT_TAG_CLASS = {
+  general: 'cat-general', control: 'cat-control', fault: 'cat-fault',
+  status: 'cat-status', query: 'cat-query', config: 'cat-config', response: 'cat-response',
+};
+
+const bitOpenMap = reactive({});
 
 function cmdKey(cmd) {
   return `${cmd.cmd}::${cmd.name}`;
 }
 
-function toggleNode(cmd) {
+function toggleBit(cmd) {
   const key = cmdKey(cmd);
-  /* 初始化未记录的节点视为展开 */
-  if (expanded[key] === undefined) expanded[key] = true;
-  expanded[key] = !expanded[key];
+  bitOpenMap[key] = !bitOpenMap[key];
 }
 
-/* 切换协议时重置所有节点为展开状态 */
-watch(selectedProtocol, (p) => {
-  Object.keys(expanded).forEach((k) => delete expanded[k]);
-  if (p && p.commands) p.commands.forEach((cmd) => { expanded[cmdKey(cmd)] = true; });
+/* 切换协议时清空展开状态 */
+watch(selectedProtocol, () => {
+  Object.keys(bitOpenMap).forEach((k) => delete bitOpenMap[k]);
+});
+
+/* 按命令字范围 + 方向推断类别 */
+function cmdCatKey(cmd) {
+  const code = parseInt(String(cmd.cmd).replace('0x', ''), 16);
+  if (Number.isNaN(code)) return 'control';
+  if (cmd.dir === 'rx') return 'response';
+  if (code >= 0x0100 && code < 0x0200) return 'general';
+  if (code >= 0x0200 && code < 0x0300) return 'control';
+  if (code >= 0x0300 && code < 0x0400) return 'fault';
+  if (code >= 0x0400 && code < 0x0500) return 'status';
+  if (code >= 0x0500 && code < 0x0600) return 'query';
+  if (code >= 0x0600 && code < 0x0700) return 'config';
+  return 'control';
+}
+function cmdCategory(cmd) {
+  return CAT_NAMES[cmdCatKey(cmd)] || '控制';
+}
+function catTagClass(cmd) {
+  return CAT_TAG_CLASS[cmdCatKey(cmd)] || 'cat-control';
+}
+function catFilterLabel(cat) {
+  if (cat === 'all') return '全部';
+  return CAT_NAMES[cat] || cat;
+}
+function catCount(cat) {
+  if (!selectedProtocol.value?.commands) return 0;
+  if (cat === 'all') return selectedProtocol.value.commands.length;
+  return selectedProtocol.value.commands.filter((c) => cmdCatKey(c) === cat).length;
+}
+
+/* 有位域/枚举字段才提供 查看bit 开关 */
+function hasBitDetails(cmd) {
+  return cmd.fields?.some((f) => f.type === 'bitfield' || f.type === 'enum') ?? false;
+}
+/* 位值为空 → 预留位 */
+function isReservedBit(field, bitNum) {
+  const b = field.bits?.[bitNum];
+  if (!b) return true;
+  return !b.one && !b.zero;
+}
+/* 字段块尺寸样式 */
+function dfSizeClass(f) {
+  const len = Number(f.length || 1);
+  if (len >= 4) return 'df-block-4B';
+  if (len === 2) return 'df-block-2B';
+  return 'df-block-1B';
+}
+/* 说明列兜底：无描述数据时用周期信息 */
+function cmdDesc(cmd) {
+  if (cmd.cycle && cmd.cycle !== '0') return `周期 ${cmd.cycle}ms`;
+  return '—';
+}
+
+/* 筛选 */
+const catFilter = ref('all');
+const senderFilter = ref('');
+const receiverFilter = ref('');
+
+const senderOptions = computed(() => {
+  const s = new Set();
+  (selectedProtocol.value?.commands || []).forEach((c) => {
+    if (c.sender) s.add(c.sender);
+  });
+  return [...s];
+});
+const receiverOptions = computed(() => {
+  const s = new Set();
+  (selectedProtocol.value?.commands || []).forEach((c) => {
+    if (c.receiver) s.add(c.receiver);
+  });
+  return [...s];
+});
+
+const filteredCommands = computed(() => {
+  const cmds = selectedProtocol.value?.commands || [];
+  return cmds.filter((cmd) => {
+    if (catFilter.value !== 'all' && cmdCatKey(cmd) !== catFilter.value) return false;
+    if (senderFilter.value && !(cmd.sender || '').includes(senderFilter.value)) return false;
+    if (receiverFilter.value && !(cmd.receiver || '').includes(receiverFilter.value)) return false;
+    return true;
+  });
 });
 
 const filteredProtocols = computed(() => {
@@ -470,31 +557,6 @@ const TYPE_LABELS = {
 };
 function typeLabel(t) {
   return TYPE_LABELS[t] || t || '—';
-}
-
-/* 字段配置摘要（用于字段总览表最后一列） */
-function fieldConfigText(f) {
-  if (f.type === 'bitfield') {
-    const n = (f.bits || []).filter((b) => b.zero || b.one).length;
-    return `${n} bit 已定义`;
-  }
-  if (f.type === 'enum') return `${(f.enumItems || []).length} 个枚举项`;
-  if (f.type === 'raw') return `默认 0x${String(f.rawValue || '00').toUpperCase()}`;
-  if (f.type === 'number') return `${f.encoding || 'uint8'} ×${f.scale ?? 1}${f.unit ? ' ' + f.unit : ''}`;
-  if (f.type === 'text') return `${lengthModeText(f)}${f.encoding ? ' · ' + f.encoding : ''}`;
-  if (f.type === 'binary') return lengthModeText(f);
-  return '—';
-}
-
-/* 长度模式摘要 */
-function lengthModeText(f) {
-  switch (f.lengthMode) {
-    case 'varlen-field': return '长度引用 LEN';
-    case 'varlen-delim': return `分隔符 ${f.delimiter || '—'}`;
-    case 'varlen-rest': return '到帧尾';
-    case 'fixed': return `固定 ${f.length || 1} B`;
-    default: return '—';
-  }
 }
 
 async function loadProtocols() {
@@ -888,28 +950,28 @@ watch(() => props.active, (isActive) => {
 }
 .md-muted { font-size: 13px; color: var(--text-tertiary); }
 
-/* 默认预览：树形视图 */
-.tree-view { max-width: 820px; }
+/* 默认预览：cmd-master-table */
+.master-view { max-width: 1080px; }
 
-.tree-view .doc-title {
+.master-view .doc-title {
   font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 4px;
 }
-.tree-view .doc-version {
+.master-view .doc-version {
   font-size: 13px;
   color: var(--text-tertiary);
   margin-bottom: 16px;
 }
-.tree-view .doc-desc {
+.master-view .doc-desc {
   font-size: 14px;
   color: var(--text-secondary);
   margin-bottom: 24px;
   line-height: 1.6;
 }
 
-.tree-h2 {
+.master-h2 {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
@@ -921,7 +983,7 @@ watch(() => props.active, (isActive) => {
   align-items: center;
   gap: 8px;
 }
-.tree-h2::before {
+.master-h2::before {
   content: '';
   display: inline-block;
   width: 3px;
@@ -930,13 +992,13 @@ watch(() => props.active, (isActive) => {
   border-radius: 2px;
 }
 
-.tree-frame-info {
+.master-frame-info {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 8px;
 }
-.tree-frame-info > div {
+.master-frame-info > div {
   font-size: 13px;
   color: var(--text-secondary);
   padding: 8px 12px;
@@ -945,12 +1007,8 @@ watch(() => props.active, (isActive) => {
   border-radius: var(--radius-sm);
 }
 
-.tree-modules {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.tree-module-row {
+.master-modules { display: flex; flex-direction: column; gap: 4px; }
+.master-module-row {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -959,8 +1017,8 @@ watch(() => props.active, (isActive) => {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
 }
-.tree-module-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.tree-module-addr {
+.master-module-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.master-module-addr {
   font-family: 'Consolas', monospace;
   font-size: 12px;
   color: var(--accent-color, #f59e0b);
@@ -969,169 +1027,223 @@ watch(() => props.active, (isActive) => {
   border-radius: 3px;
 }
 
-/* 命令节点 */
-.tree-node {
-  margin-bottom: 8px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  background: var(--bg-tertiary);
-  overflow: hidden;
-}
-
-.tree-node-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
-}
-.tree-node-head:hover { background: var(--bg-secondary); }
-.tree-node-head.collapsed { background: var(--bg-secondary); }
-
-.tree-chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-}
-.tree-node-head.collapsed .tree-chevron { transform: rotate(-90deg); }
-
-.tree-cmd-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-.tree-cmd-code {
-  font-family: 'Consolas', monospace;
-  font-size: 12px;
-  color: var(--accent-color, #f59e0b);
-  background: var(--bg-secondary);
-  padding: 2px 8px;
-  border-radius: 3px;
-}
-.tree-cmd-dir {
+/* 类别标签配色 */
+.tag {
+  display: inline-block;
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+.tag.cat-general  { background: rgba(39, 166, 68, 0.15);  color: var(--accent-green); }
+.tag.cat-control  { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.tag.cat-fault    { background: rgba(239, 68, 68, 0.15);  color: var(--accent-red); }
+.tag.cat-status   { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+.tag.cat-query    { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+.tag.cat-config   { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.tag.cat-response { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+
+/* 筛选条 */
+.cmd-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.filter-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.filter-btn:hover { border-color: var(--accent-color, #f59e0b); }
+.filter-btn.active {
+  background: var(--accent-color, #f59e0b);
+  color: #fff;
+  border-color: var(--accent-color, #f59e0b);
+}
+.filter-count { opacity: 0.7; margin-left: 4px; }
+.filter-dropdowns {
+  display: flex;
+  gap: 8px;
   margin-left: auto;
 }
-.tree-cmd-dir.tx { background: rgba(39, 166, 68, 0.15); color: var(--accent-green); }
-.tree-cmd-dir.rx { background: rgba(39, 139, 216, 0.15); color: var(--accent-blue, #2b8aeb); }
-.tree-cmd-cycle { font-size: 11px; color: var(--text-tertiary); }
+.filter-select { width: auto; font-size: 12px; }
 
-.tree-node-body {
-  padding: 12px 16px 14px 42px;
-  border-top: 1px solid var(--border-light);
+/* 主表 */
+.cmd-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
 }
-
-.tree-cmd-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-bottom: 10px;
-}
-
-.tree-table {
+.cmd-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
+  min-width: 820px;
 }
-.tree-table th {
+.cmd-table th {
   background: var(--bg-secondary);
   color: var(--text-secondary);
   font-weight: 600;
-  padding: 6px 10px;
+  padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 12px;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
 }
-.tree-table td {
-  padding: 6px 10px;
+.cmd-table td {
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
   color: var(--text-primary);
 }
-.tree-table code {
-  background: var(--bg-secondary);
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 12px;
-  color: var(--accent-color, #f59e0b);
-}
+.cmd-table tr:last-child td { border-bottom: none; }
+.cmd-table tr:hover td { background: var(--bg-secondary); }
 
-.tree-sub-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-top: 10px;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.tree-sub-title::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  background: var(--accent-color, #f59e0b);
-  border-radius: 50%;
-}
-
-/* 字段总览表的配置列 */
-.tree-field-config {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-/* 按类型分组的字段块 */
-.tree-field-block {
-  margin-bottom: 10px;
-  padding: 10px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-}
-.tree-field-inline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-}
-.tree-field-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.tree-field-label code {
-  background: var(--bg-tertiary);
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 12px;
-  color: var(--accent-color, #f59e0b);
-}
-/* 键值对行内展示 */
-.tree-kv {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-.tree-kv-k { color: var(--text-tertiary); }
-.tree-kv-v {
-  background: var(--bg-tertiary);
-  padding: 1px 6px;
-  border-radius: 3px;
+.cmd-code {
   font-family: 'Consolas', monospace;
   font-size: 12px;
-  color: var(--text-primary);
+  color: var(--accent-color, #f59e0b);
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
 }
+.cmd-name { font-weight: 600; }
+.cmd-dir-badge {
+  font-size: 10px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--accent-purple);
+  vertical-align: middle;
+}
+.cmd-sender, .cmd-receiver { font-size: 12px; color: var(--text-secondary); }
+.cmd-desc { font-size: 11.5px; color: var(--text-tertiary); }
+.th-bit-toggle { text-align: left; }
+.td-bit-toggle { padding: 6px 8px; vertical-align: middle; }
 
-.tree-muted { font-size: 13px; color: var(--text-tertiary); }
+/* 查看bit 开关 */
+.bit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--accent-purple);
+  user-select: none;
+}
+.bit-toggle input { display: none; }
+.bit-track {
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--border-color);
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.bit-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s ease;
+}
+.bit-toggle input:checked + .bit-track { background: var(--accent-purple); }
+.bit-toggle input:checked + .bit-track .bit-knob { left: 14px; }
+.bit-label { white-space: nowrap; }
+
+/* 数据段格式色块 */
+.df-noop {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: 'Consolas', monospace;
+}
+.df-visual { min-width: 0; }
+.df-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.df-block {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  border-radius: 4px;
+  min-width: 46px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+.df-block-1B { min-width: 46px; }
+.df-block-2B { min-width: 68px; }
+.df-block-4B { min-width: 92px; }
+.df-bname { font-size: 11.5px; font-weight: 600; color: var(--text-primary); }
+.df-bsize { font-size: 10px; color: var(--text-tertiary); font-family: 'Consolas', monospace; }
+.df-c0 { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); }
+.df-c1 { background: rgba(39, 166, 68, 0.12);  border-color: rgba(39, 166, 68, 0.35); }
+.df-c2 { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); }
+.df-c3 { background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.35); }
+.df-c4 { background: rgba(239, 68, 68, 0.12);  border-color: rgba(239, 68, 68, 0.35); }
+.df-c5 { background: rgba(14, 165, 233, 0.12); border-color: rgba(14, 165, 233, 0.35); }
+
+/* 展开的位域/枚举详情 */
+.bit-details-open {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+}
+.bit-byte-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.bit-byte-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+.bit-byte-bits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.bit-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 3px;
+  min-width: 44px;
+  border: 1px solid var(--border-light);
+}
+.bit-cell.df-bit-defined { background: var(--bg-secondary); }
+.bit-cell.df-bit-reserved {
+  background: transparent;
+  border-style: dashed;
+  opacity: 0.55;
+}
+.bit-bi { font-size: 9.5px; color: var(--text-tertiary); font-family: 'Consolas', monospace; }
+.bit-bv { font-size: 10.5px; color: var(--text-primary); text-align: center; }
+
+.master-muted { font-size: 13px; color: var(--text-tertiary); }
+
 
 /* PDF 样式视图 */
 .pdf-view {
