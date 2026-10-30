@@ -97,49 +97,88 @@
                 <span>接收方：{{ cmd.receiver || '—' }}</span>
               </div>
               <table v-if="cmd.fields?.length" class="tree-table">
-                <thead><tr><th>字段名</th><th>偏移</th><th>长度</th><th>类型</th><th>缩放</th><th>单位</th></tr></thead>
+                <thead><tr><th>字段名</th><th>偏移</th><th>长度</th><th>类型</th><th>缩放</th><th>单位</th><th>配置</th></tr></thead>
                 <tbody>
                   <tr v-for="field in cmd.fields" :key="field.name">
                     <td>{{ field.name }}</td>
                     <td>{{ field.offset }}</td>
                     <td>{{ field.length }}</td>
-                    <td>{{ field.type }}</td>
-                    <td>{{ field.scale ?? 1 }}</td>
+                    <td>{{ typeLabel(field.type) }}</td>
+                    <td>{{ field.scale ?? '—' }}</td>
                     <td>{{ field.unit || '—' }}</td>
+                    <td class="tree-field-config">{{ fieldConfigText(field) }}</td>
                   </tr>
                 </tbody>
               </table>
               <p v-else class="tree-muted">无字段定义</p>
-              <!-- 位域展示 -->
-              <template v-if="cmd.fields?.some(f => f.bits)">
+
+              <!-- 按字段类型分组展示专属定义（而非统一位域） -->
+              <!-- 位域字段 -->
+              <template v-if="cmd.fields?.some(f => f.type === 'bitfield')">
                 <div class="tree-sub-title">位域定义</div>
-                <div v-for="field in cmd.fields.filter(f => f.bits)" :key="field.name" class="tree-bits">
+                <div v-for="field in cmd.fields.filter(f => f.type === 'bitfield')" :key="field.name" class="tree-field-block">
+                  <div class="tree-field-label"><code>{{ field.name }}</code></div>
                   <table class="tree-table">
-                    <thead><tr><th>字段</th><th>位</th><th>名称</th></tr></thead>
+                    <thead><tr><th style="width:80px;">位</th><th>0 含义</th><th>1 含义</th></tr></thead>
                     <tbody>
                       <tr v-for="bit in field.bits" :key="bit.bit">
-                        <td><code>{{ field.name }}</code></td>
                         <td>bit{{ bit.bit }}</td>
-                        <td>{{ bit.name }}</td>
+                        <td>{{ bit.zero || '—' }}</td>
+                        <td>{{ bit.one || '—' }}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </template>
-              <!-- 枚举展示 -->
-              <template v-if="cmd.fields?.some(f => f.options)">
+              <!-- 枚举字段 -->
+              <template v-if="cmd.fields?.some(f => f.type === 'enum')">
                 <div class="tree-sub-title">枚举定义</div>
-                <div v-for="field in cmd.fields.filter(f => f.options)" :key="field.name" class="tree-enum">
+                <div v-for="field in cmd.fields.filter(f => f.type === 'enum')" :key="field.name" class="tree-field-block">
+                  <div class="tree-field-label"><code>{{ field.name }}</code></div>
                   <table class="tree-table">
-                    <thead><tr><th>字段</th><th>值</th><th>含义</th></tr></thead>
+                    <thead><tr><th style="width:100px;">值</th><th>含义</th></tr></thead>
                     <tbody>
-                      <tr v-for="opt in field.options" :key="opt.value">
-                        <td><code>{{ field.name }}</code></td>
-                        <td><code>0x{{ opt.value.toString(16).toUpperCase().padStart(2, '0') }}</code></td>
-                        <td>{{ opt.label }}</td>
+                      <tr v-for="opt in field.enumItems" :key="opt.value">
+                        <td><code>0x{{ String(opt.value).toUpperCase().padStart(2, '0') }}</code></td>
+                        <td>{{ opt.meaning || '—' }}</td>
                       </tr>
                     </tbody>
                   </table>
+                </div>
+              </template>
+              <!-- 原始数值字段 -->
+              <template v-if="cmd.fields?.some(f => f.type === 'raw')">
+                <div class="tree-sub-title">原始数值</div>
+                <div v-for="field in cmd.fields.filter(f => f.type === 'raw')" :key="field.name" class="tree-field-block tree-field-inline">
+                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
+                  <span class="tree-kv"><span class="tree-kv-k">默认值</span><code class="tree-kv-v">0x{{ String(field.rawValue || '00').toUpperCase().padStart(2, '0') }}</code></span>
+                </div>
+              </template>
+              <!-- 多字节整数字段 -->
+              <template v-if="cmd.fields?.some(f => f.type === 'number')">
+                <div class="tree-sub-title">整数字段</div>
+                <div v-for="field in cmd.fields.filter(f => f.type === 'number')" :key="field.name" class="tree-field-block tree-field-inline">
+                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
+                  <span class="tree-kv"><span class="tree-kv-k">编码</span><code class="tree-kv-v">{{ field.encoding || 'uint8' }}</code></span>
+                  <span class="tree-kv" v-if="field.scale"><span class="tree-kv-k">缩放</span><code class="tree-kv-v">×{{ field.scale }}</code></span>
+                  <span class="tree-kv" v-if="field.unit"><span class="tree-kv-k">单位</span><code class="tree-kv-v">{{ field.unit }}</code></span>
+                </div>
+              </template>
+              <!-- 文本/JSON 字段 -->
+              <template v-if="cmd.fields?.some(f => f.type === 'text')">
+                <div class="tree-sub-title">文本字段</div>
+                <div v-for="field in cmd.fields.filter(f => f.type === 'text')" :key="field.name" class="tree-field-block tree-field-inline">
+                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
+                  <span class="tree-kv"><span class="tree-kv-k">长度</span><code class="tree-kv-v">{{ lengthModeText(field) }}</code></span>
+                  <span class="tree-kv" v-if="field.encoding"><span class="tree-kv-k">编码</span><code class="tree-kv-v">{{ field.encoding }}</code></span>
+                </div>
+              </template>
+              <!-- 二进制段字段 -->
+              <template v-if="cmd.fields?.some(f => f.type === 'binary')">
+                <div class="tree-sub-title">二进制段</div>
+                <div v-for="field in cmd.fields.filter(f => f.type === 'binary')" :key="field.name" class="tree-field-block tree-field-inline">
+                  <span class="tree-field-label"><code>{{ field.name }}</code></span>
+                  <span class="tree-kv"><span class="tree-kv-k">长度</span><code class="tree-kv-v">{{ lengthModeText(field) }}</code></span>
                 </div>
               </template>
             </div>
@@ -418,6 +457,44 @@ const FIELD_DESCRIPTIONS = {
 
 function fieldDesc(f) {
   return FIELD_DESCRIPTIONS[String(f).toLowerCase()] || '—';
+}
+
+/* 字段类型中文标签 */
+const TYPE_LABELS = {
+  bitfield: '位域',
+  enum: '枚举',
+  raw: '原始数值',
+  number: '整数',
+  text: '文本',
+  binary: '二进制',
+};
+function typeLabel(t) {
+  return TYPE_LABELS[t] || t || '—';
+}
+
+/* 字段配置摘要（用于字段总览表最后一列） */
+function fieldConfigText(f) {
+  if (f.type === 'bitfield') {
+    const n = (f.bits || []).filter((b) => b.zero || b.one).length;
+    return `${n} bit 已定义`;
+  }
+  if (f.type === 'enum') return `${(f.enumItems || []).length} 个枚举项`;
+  if (f.type === 'raw') return `默认 0x${String(f.rawValue || '00').toUpperCase()}`;
+  if (f.type === 'number') return `${f.encoding || 'uint8'} ×${f.scale ?? 1}${f.unit ? ' ' + f.unit : ''}`;
+  if (f.type === 'text') return `${lengthModeText(f)}${f.encoding ? ' · ' + f.encoding : ''}`;
+  if (f.type === 'binary') return lengthModeText(f);
+  return '—';
+}
+
+/* 长度模式摘要 */
+function lengthModeText(f) {
+  switch (f.lengthMode) {
+    case 'varlen-field': return '长度引用 LEN';
+    case 'varlen-delim': return `分隔符 ${f.delimiter || '—'}`;
+    case 'varlen-rest': return '到帧尾';
+    case 'fixed': return `固定 ${f.length || 1} B`;
+    default: return '—';
+  }
 }
 
 async function loadProtocols() {
@@ -1000,6 +1077,58 @@ watch(() => props.active, (isActive) => {
   height: 5px;
   background: var(--accent-color, #f59e0b);
   border-radius: 50%;
+}
+
+/* 字段总览表的配置列 */
+.tree-field-config {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* 按类型分组的字段块 */
+.tree-field-block {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+}
+.tree-field-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.tree-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tree-field-label code {
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--accent-color, #f59e0b);
+}
+/* 键值对行内展示 */
+.tree-kv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.tree-kv-k { color: var(--text-tertiary); }
+.tree-kv-v {
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  color: var(--text-primary);
 }
 
 .tree-muted { font-size: 13px; color: var(--text-tertiary); }
