@@ -2491,14 +2491,22 @@ async function deleteProtocol(proto) {
         await window.electronAPI.draft.delete(proto.name);
       } else {
         /* 本地模式 / 服务器正式版：正常删除 */
-        await window.electronAPI.db.batch([
+        const res = await window.electronAPI.db.batch([
           { sql: 'DELETE FROM commands WHERE protocol_id IN (SELECT id FROM protocols WHERE name = ?)', params: [proto.name] },
           { sql: 'DELETE FROM modules WHERE protocol_id IN (SELECT id FROM protocols WHERE name = ?)', params: [proto.name] },
           { sql: 'DELETE FROM protocols WHERE name = ?', params: [proto.name] },
         ]);
+        /* db.batch 失败返回 { success:false } 而非抛错，必须显式检查：
+         * 否则 DB 没删掉但内存列表照删，协议预览从库重新加载时被删协议"复活" */
+        if (res && res.success === false) {
+          showToast(`删除失败：${res.error || '数据库错误'}，协议已保留在列表中`, 'error');
+          return;
+        }
       }
     } catch (err) {
-      /* 数据库删除失败不影响内存列表的清理 */
+      /* 数据库删除失败时保留协议在列表中，避免"配置里已删、预览里还在"的假象 */
+      showToast(`删除失败：${err.message}，协议已保留在列表中`, 'error');
+      return;
     }
   }
 

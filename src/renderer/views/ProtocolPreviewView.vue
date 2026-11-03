@@ -843,8 +843,8 @@ watch(() => props.active, (isActive) => {
   padding: 4px;
 }
 
-/* Markdown 视图 */
-.md-view { max-width: 820px; }
+/* Markdown 视图：自适应铺满容器宽度 */
+.md-view { max-width: none; }
 
 .doc-title {
   font-size: 24px;
@@ -950,8 +950,8 @@ watch(() => props.active, (isActive) => {
 }
 .md-muted { font-size: 13px; color: var(--text-tertiary); }
 
-/* 默认预览：cmd-master-table */
-.master-view { max-width: 1080px; }
+/* 默认预览：cmd-master-table，自适应铺满容器宽度 */
+.master-view { max-width: none; }
 
 .master-view .doc-title {
   font-size: 24px;
@@ -1254,7 +1254,9 @@ watch(() => props.active, (isActive) => {
 .pdf-page {
   background: white;
   color: #1a1a1a;
-  max-width: 750px;
+  /* 自适应铺满容器宽度（打印时由 @media print 规则另行处理） */
+  max-width: none;
+  width: 100%;
   margin: 0 auto;
   padding: 0;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
