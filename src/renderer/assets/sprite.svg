@@ -123,9 +123,10 @@
       <path d="M18 6 L6 18"/>
     </symbol>
 
+    <!-- sidebar-toggle: 侧边栏折叠（圆角面板 + 左侧内竖条，参考经典 panel/pane 图标） -->
     <symbol id="i-collapse-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10 6 L5 12 L10 18"/>
-      <path d="M5 12 L19 12"/>
+      <rect x="5.5" y="6.5" width="13" height="12" rx="3.5"/>
+      <rect x="8" y="9" width="2" height="7.5" rx="0.9"/>
     </symbol>
 
     <symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
