@@ -2307,6 +2307,17 @@ select option {
   letter-spacing: 0.3px;
 }
 
+/* TEXT 终端模式：等宽字体 + 保留空格对齐（CLI 表格）+ ANSI 着色 */
+.line-data.text-mode {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+  min-width: 0;
+}
+
 .line-desc {
   color: var(--text-tertiary);
   white-space: nowrap;

@@ -312,13 +312,19 @@
                     <button
                       class="tool-btn"
                       :class="{ active: session.logMode === 'hex' }"
-                      @click="session.logMode = 'hex'"
+                      @click="setLogMode(session, 'hex')"
                     >HEX</button>
                     <button
                       class="tool-btn"
                       :class="{ active: session.logMode === 'ascii' }"
-                      @click="session.logMode = 'ascii'"
+                      @click="setLogMode(session, 'ascii')"
                     >ASCII</button>
+                    <button
+                      class="tool-btn"
+                      :class="{ active: session.logMode === 'text' }"
+                      title="终端文本模式：按行显示，支持 ANSI 颜色"
+                      @click="setLogMode(session, 'text')"
+                    >TEXT</button>
                     <button
                       class="tool-btn"
                       :class="{ active: session.parseEnabled }"
@@ -339,17 +345,24 @@
                     :key="i"
                     class="terminal-line"
                     :class="[line.dir, line.type || '']"
+                    v-show="isLineVisible(session, line)"
                   >
                     <div class="line-row">
                       <span class="line-time">{{ line.time }}</span>
                       <span class="line-dir">{{ formatTerminalDir(line) }}</span>
                       <span
+                        v-if="line.kind === 'text'"
+                        class="line-data text-mode"
+                        v-html="renderAnsi(line.data)"
+                      ></span>
+                      <span
+                        v-else
                         class="line-data"
                         :class="{ 'frame-hover': session.parseEnabled && (line.dir === 'tx' || line.dir === 'rx') }"
                         @mouseenter="session.parseEnabled && (line.dir === 'tx' || line.dir === 'rx') && showSegCard($event, buildFrameParse(session, line))"
                         @mousemove="moveSegCard"
                         @mouseleave="hideSegCard"
-                      >{{ formatTerminalData(line, session.logMode) }}</span>
+                      >{{ formatTerminalData(line, session.logMode === 'text' ? 'ascii' : session.logMode) }}</span>
                       <span class="line-desc" v-if="line.desc">{{ line.desc }}</span>
                     </div>
                   </div>
@@ -460,13 +473,19 @@
               <button
                 class="tool-btn"
                 :class="{ active: fullscreenLogSession.logMode === 'hex' }"
-                @click="fullscreenLogSession.logMode = 'hex'"
+                @click="setLogMode(fullscreenLogSession, 'hex')"
               >HEX</button>
               <button
                 class="tool-btn"
                 :class="{ active: fullscreenLogSession.logMode === 'ascii' }"
-                @click="fullscreenLogSession.logMode = 'ascii'"
+                @click="setLogMode(fullscreenLogSession, 'ascii')"
               >ASCII</button>
+              <button
+                class="tool-btn"
+                :class="{ active: fullscreenLogSession.logMode === 'text' }"
+                title="终端文本模式：按行显示，支持 ANSI 颜色"
+                @click="setLogMode(fullscreenLogSession, 'text')"
+              >TEXT</button>
               <button
                 class="tool-btn"
                 :class="{ active: fullscreenLogSession.parseEnabled }"
@@ -487,17 +506,24 @@
               :key="i"
               class="terminal-line"
               :class="[line.dir, line.type || '']"
+              v-show="isLineVisible(fullscreenLogSession, line)"
             >
               <div class="line-row">
                 <span class="line-time">{{ line.time }}</span>
                 <span class="line-dir">{{ formatTerminalDir(line) }}</span>
                 <span
+                  v-if="line.kind === 'text'"
+                  class="line-data text-mode"
+                  v-html="renderAnsi(line.data)"
+                ></span>
+                <span
+                  v-else
                   class="line-data"
                   :class="{ 'frame-hover': fullscreenLogSession.parseEnabled && (line.dir === 'tx' || line.dir === 'rx') }"
                   @mouseenter="fullscreenLogSession.parseEnabled && (line.dir === 'tx' || line.dir === 'rx') && showSegCard($event, buildFrameParse(fullscreenLogSession, line))"
                   @mousemove="moveSegCard"
                   @mouseleave="hideSegCard"
-                >{{ formatTerminalData(line, fullscreenLogSession.logMode) }}</span>
+                >{{ formatTerminalData(line, fullscreenLogSession.logMode === 'text' ? 'ascii' : fullscreenLogSession.logMode) }}</span>
                 <span class="line-desc" v-if="line.desc">{{ line.desc }}</span>
               </div>
             </div>
@@ -1060,6 +1086,203 @@ function formatTerminalData(line, logMode) {
   return raw.toUpperCase();
 }
 
+/* ==================== TEXT 终端模式（行缓冲 + ANSI 解析） ====================
+ * 与 HEX/ASCII 帧模式并行工作：
+ *   - 每个 RX chunk 同时喂给文本缓冲，按 \r\n 切行后以 kind:'text' 入日志
+ *   - 显示层由 isLineVisible() 决定：TEXT 模式只显示文本行 + TX/INFO/ERR，
+ *     HEX/ASCII 模式隐藏文本行，帧显示逻辑完全不受影响
+ */
+
+/* 每会话的 UTF-8 流式解码器与未完结行缓冲（keyed by session.id） */
+const textTerminals = new Map();
+
+function getTextTerm(sessionId) {
+  let t = textTerminals.get(sessionId);
+  if (!t) {
+    t = { decoder: new TextDecoder('utf-8'), buf: '' };
+    textTerminals.set(sessionId, t);
+  }
+  return t;
+}
+
+function hexToBytes(hexStr) {
+  return new Uint8Array(
+    (hexStr || '').trim().split(/\s+/).filter(Boolean)
+      .map(b => parseInt(b, 16))
+      .filter(n => !isNaN(n))
+  );
+}
+
+function pushTextLine(session, text) {
+  session.terminalLines.push({
+    time: formatTime(new Date()),
+    dir: 'rx',
+    type: 'text',
+    kind: 'text',
+    data: text,
+    desc: '',
+  });
+  capLines(session);
+}
+
+/**
+ * 将一个 RX chunk（hex 字符串）喂给文本行缓冲
+ * 使用流式 TextDecoder，多字节 UTF-8 字符跨 chunk 不会乱码
+ */
+function pushTextChunk(session, hexStr) {
+  if (!hexStr) return;
+  const t = getTextTerm(session.id);
+  let text = '';
+  try {
+    text = t.decoder.decode(hexToBytes(hexStr), { stream: true });
+  } catch { text = ''; }
+  if (!text) return;
+  t.buf += text;
+  const parts = t.buf.split(/\r\n|\n|\r/);
+  t.buf = parts.pop() || '';
+  for (const l of parts) pushTextLine(session, l);
+}
+
+/**
+ * 把残留的半行刷出为一条日志（断开串口 / 清空日志 / 切换显示模式时调用）
+ */
+function flushTextBuffer(session) {
+  const t = textTerminals.get(session.id);
+  if (t && t.buf) {
+    pushTextLine(session, t.buf);
+    t.buf = '';
+  }
+}
+
+/**
+ * 显示模式切换：离开 TEXT 模式时先刷出残留半行，避免丢字
+ */
+function setLogMode(session, mode) {
+  if (session.logMode === mode) return;
+  if (session.logMode === 'text') flushTextBuffer(session);
+  session.logMode = mode;
+}
+
+/**
+ * 日志行可见性过滤（TEXT 与帧模式互斥显示）
+ */
+function isLineVisible(session, line) {
+  if (session.logMode === 'text') {
+    return line.kind === 'text' || line.dir === 'tx' || line.type === 'info' || line.type === 'err';
+  }
+  return line.kind !== 'text';
+}
+
+/* ---------- ANSI 转义序列 → HTML ---------- */
+
+/* 基础 16 色（浅色终端背景下取偏深、可读的色值；8-15 为亮色） */
+const ANSI_BASE = [
+  '#4b5563', '#dc2626', '#16a34a', '#d97706', '#2563eb', '#9333ea', '#0891b2', '#9ca3af',
+  '#111827', '#ef4444', '#22c55e', '#f59e0b', '#3b82f6', '#a855f7', '#06b6d4', '#e5e7eb',
+];
+
+/* xterm 256 色板：16 基色 + 6×6×6 色立方 + 24 级灰度 */
+function ansi256Color(i) {
+  if (i < 16) return ANSI_BASE[i];
+  if (i < 232) {
+    const n = i - 16;
+    const steps = [0, 95, 135, 175, 215, 255];
+    return `rgb(${steps[(n / 36) | 0]},${steps[((n % 36) / 6) | 0]},${steps[n % 6]})`;
+  }
+  const v = 8 + (i - 232) * 10;
+  return `rgb(${v},${v},${v})`;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+const ANSI_TOKEN = /\x1B\[([0-9;?]*)([@-~])/g;
+
+/**
+ * 将含 ANSI 转义序列的文本转为 HTML
+ * 支持：SGR 颜色（16/256/真彩）、粗体、变暗、斜体、下划线、删除线
+ * 其余 CSI（光标移动、私有模式）与 OSC 序列直接吞掉
+ */
+function renderAnsi(raw) {
+  if (!raw) return '';
+  /* 预清理：OSC 序列（标题等）与孤立 ESC */
+  const text = raw
+    .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
+    .replace(/\x1B[^\[]/g, '');
+  if (!text) return '';
+
+  let out = '';
+  let last = 0;
+  let m;
+  let fg = null, bg = null;
+  let bold = false, dim = false, italic = false, underline = false, strike = false;
+
+  const emit = (seg) => {
+    if (!seg) return;
+    const esc = escapeHtml(seg);
+    if (!fg && !bg && !bold && !dim && !italic && !underline && !strike) {
+      out += esc;
+      return;
+    }
+    let style = '';
+    if (fg) style += `color:${fg};`;
+    if (bg) style += `background:${bg};`;
+    if (bold) style += 'font-weight:700;';
+    if (dim) style += 'opacity:.55;';
+    if (italic) style += 'font-style:italic;';
+    if (underline) style += 'text-decoration:underline;';
+    if (strike) style += 'text-decoration:line-through;';
+    out += `<span style="${style}">${esc}</span>`;
+  };
+
+  ANSI_TOKEN.lastIndex = 0;
+  while ((m = ANSI_TOKEN.exec(text))) {
+    emit(text.slice(last, m.index));
+    last = ANSI_TOKEN.lastIndex;
+    if (m[2] !== 'm') continue; /* 非 SGR 序列（光标控制等）直接吞掉 */
+
+    const params = m[1];
+    const codes = (params === '' ? [0] : params.split(';').map(n => n === '' ? 0 : parseInt(n, 10)))
+      .filter(n => !isNaN(n));
+    let i = 0;
+    while (i < codes.length) {
+      const c = codes[i];
+      if (c === 0) { fg = bg = null; bold = dim = italic = underline = strike = false; }
+      else if (c === 1) bold = true;
+      else if (c === 2) dim = true;
+      else if (c === 3) italic = true;
+      else if (c === 4) underline = true;
+      else if (c === 9) strike = true;
+      else if (c === 22) { bold = dim = false; }
+      else if (c === 23) italic = false;
+      else if (c === 24) underline = false;
+      else if (c === 29) strike = false;
+      else if (c === 39) fg = null;
+      else if (c === 49) bg = null;
+      else if (c >= 30 && c <= 37) fg = ANSI_BASE[c - 30];
+      else if (c >= 90 && c <= 97) fg = ANSI_BASE[c - 90 + 8];
+      else if (c >= 40 && c <= 47) bg = ANSI_BASE[c - 40];
+      else if (c >= 100 && c <= 107) bg = ANSI_BASE[c - 100 + 8];
+      else if (c === 38 || c === 48) {
+        /* 扩展色：38;5;n（256 色）或 38;2;r;g;b（真彩） */
+        let col = null;
+        if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
+          col = ansi256Color(codes[i + 2]);
+          i += 2;
+        } else if (codes[i + 1] === 2) {
+          col = `rgb(${codes[i + 2] || 0},${codes[i + 3] || 0},${codes[i + 4] || 0})`;
+          i += 4;
+        }
+        if (c === 38) fg = col; else bg = col;
+      }
+      i++;
+    }
+  }
+  emit(text.slice(last));
+  return out;
+}
+
 /**
  * 信号解析悬浮卡片状态（fixed 定位跟随鼠标，Teleport 到 body）
  * groups: [{ name, value, children: [{ label, value }] }]
@@ -1328,6 +1551,7 @@ async function connectPort(session) {
  */
 async function disconnectPort(session) {
   if (session.cycle) toggleCycle(session);
+  flushTextBuffer(session);
   if (!hasElectron) {
     session.open = false;
     session.terminalLines.push({
@@ -1740,6 +1964,8 @@ onMounted(() => {
     if (!session) return;
     session.rx++;
     session.fps++;
+    /* TEXT 终端模式：chunk 喂给文本行缓冲（与帧显示并行，不冲突） */
+    pushTextChunk(session, data.hex);
     session.terminalLines.push({
       time: formatTime(new Date()),
       dir: 'rx',
@@ -1781,6 +2007,7 @@ onMounted(() => {
       if (s.port && !portPaths.includes(s.port)) {
         if (s.open) {
           s.open = false;
+          flushTextBuffer(s);
           s.terminalLines.push({
             time: formatTime(new Date()),
             dir: '',
@@ -1866,12 +2093,16 @@ function removeSession(id) {
  */
 function clearSessionLog(session) {
   session.terminalLines = [];
+  textTerminals.delete(session.id);
 }
 
 /**
  * 清空全部会话的通信日志
  */
 function clearAllLogs() {
-  sessions.value.forEach(s => { s.terminalLines = []; });
+  sessions.value.forEach(s => {
+    s.terminalLines = [];
+    textTerminals.delete(s.id);
+  });
 }
 </script>
