@@ -83,11 +83,13 @@ Var BL_RunOn         ; 1 = 完成后启动应用 (默认)
   ${EndIf}
 
   ; 页面字体（中文由 GDI 字体链接回退到微软雅黑）
-  CreateFont $BL_FTitle "Segoe UI" 26 700
-  CreateFont $BL_FH2 "Segoe UI" 20 700
-  CreateFont $BL_FRadio "Segoe UI" 16 600
-  CreateFont $BL_FBody "Segoe UI" 14 400
-  CreateFont $BL_FSmall "Segoe UI" 13 400
+  ; 字号整体降一档：原标题 26/20/16/14/13pt 搭配 u 单位的紧凑布局,
+  ; 中文回退字体行高更高, 渲染后行间只剩 4~6u, 视觉拥挤
+  CreateFont $BL_FTitle "Segoe UI" 22 700
+  CreateFont $BL_FH2 "Segoe UI" 17 700
+  CreateFont $BL_FRadio "Segoe UI" 14 600
+  CreateFont $BL_FBody "Segoe UI" 13 400
+  CreateFont $BL_FSmall "Segoe UI" 12 400
 
   !ifndef BUILD_UNINSTALLER
     ; 深色标题栏 (DWMWA_USE_IMMERSIVE_DARK_MODE: Win10 20H1+=20, 1809/1909=19)
@@ -343,36 +345,36 @@ FunctionEnd
     SetCtlColors $0 "" 181920
     Call BL_DarkFrame
 
-    ${NSD_CreateIcon} 14u 8u 28u 28u ""
+    ${NSD_CreateIcon} 14u 10u 28u 28u ""
     Pop $0
     ${NSD_SetIconFromInstaller} $0 $BL_Icon
 
-    ${NSD_CreateLabel} 52u 8u 240u 26u "欢迎安装 ${PRODUCT_NAME}"
+    ${NSD_CreateLabel} 52u 10u 240u 24u "欢迎安装 ${PRODUCT_NAME}"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FTitle 1
     SetCtlColors $0 EEEFFC "transparent"
 
-    ${NSD_CreateLabel} 52u 38u 240u 14u "串口协议管理工具 · 版本 ${VERSION}"
+    ${NSD_CreateLabel} 52u 40u 240u 13u "串口协议管理工具 · 版本 ${VERSION}"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $0 8A8F98 "transparent"
 
-    ${NSD_CreateLabel} 14u 64u 272u 3u "" ; 橙色分隔条
+    ${NSD_CreateLabel} 14u 62u 272u 3u "" ; 橙色分隔条
     Pop $0
     SetCtlColors $0 FF6B00 FF6B00
 
-    ; 功能要点 — 独立行, 行距 20u
-    ${NSD_CreateLabel} 14u 78u 272u 13u "• 协议数据库：串口协议的管理与导入导出"
+    ; 功能要点 — 独立行, 行距 19u, 底部预留品牌条空间
+    ${NSD_CreateLabel} 14u 76u 272u 13u "• 协议数据库：串口协议的管理与导入导出"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $0 C9CBD1 "transparent"
 
-    ${NSD_CreateLabel} 14u 98u 272u 13u "• 实时报文编解码、抓包与标记"
+    ${NSD_CreateLabel} 14u 95u 272u 13u "• 实时报文编解码、抓包与标记"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $0 C9CBD1 "transparent"
 
-    ${NSD_CreateLabel} 14u 118u 272u 13u "• AI 助手辅助分析与调试"
+    ${NSD_CreateLabel} 14u 114u 272u 13u "• AI 助手辅助分析与调试"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $0 C9CBD1 "transparent"
@@ -401,46 +403,46 @@ FunctionEnd
     SetCtlColors $0 "" 181920
     Call BL_DarkFrame
 
-    ${NSD_CreateLabel} 14u 6u 272u 20u "选择安装方式"
+    ${NSD_CreateLabel} 14u 4u 272u 20u "选择安装方式"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FH2 1
     SetCtlColors $0 EEEFFC "transparent"
 
     ; ---- 第 1 行: 为所有用户安装 (面板 + 选中/未选中两套文字叠加) ----
-    ${NSD_CreateLabel} 14u 40u 272u 32u ""      ; 行面板 (卡片底)
+    ${NSD_CreateLabel} 14u 30u 272u 34u ""      ; 行面板 (卡片底)
     Pop $BL_P1S
     SetCtlColors $BL_P1S "" 1F2029
 
-    ${NSD_CreateLabel} 22u 46u 12u 14u "●"      ; 选中态: 实心橙点
+    ${NSD_CreateLabel} 22u 36u 12u 13u "●"      ; 选中态: 实心橙点
     Pop $BL_D1S
     SendMessage $BL_D1S ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_D1S FF6B00 "transparent"
 
-    ${NSD_CreateLabel} 38u 44u 244u 15u "为所有用户安装"
+    ${NSD_CreateLabel} 38u 34u 244u 14u "为所有用户安装"
     Pop $BL_T1S
     SendMessage $BL_T1S ${WM_SETFONT} $BL_FRadio 1
     SetCtlColors $BL_T1S EEEFFC "transparent"
 
-    ${NSD_CreateLabel} 38u 59u 244u 12u "安装到 Program Files，这台电脑的所有账户可用"
+    ${NSD_CreateLabel} 38u 49u 244u 12u "安装到 Program Files，这台电脑的所有账户可用"
     Pop $BL_C1S
     SendMessage $BL_C1S ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $BL_C1S C9CBD1 "transparent"
 
-    ${NSD_CreateLabel} 14u 40u 272u 32u ""      ; 同一行未选中态 (初始隐藏)
+    ${NSD_CreateLabel} 14u 30u 272u 34u ""      ; 同一行未选中态 (初始隐藏)
     Pop $BL_P1U
     SetCtlColors $BL_P1U "" 1F2029
 
-    ${NSD_CreateLabel} 22u 46u 12u 14u "○"      ; 未选中态: 空心灰点
+    ${NSD_CreateLabel} 22u 36u 12u 13u "○"      ; 未选中态: 空心灰点
     Pop $BL_D1U
     SendMessage $BL_D1U ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_D1U 55585F "transparent"
 
-    ${NSD_CreateLabel} 38u 44u 244u 15u "为所有用户安装"
+    ${NSD_CreateLabel} 38u 34u 244u 14u "为所有用户安装"
     Pop $BL_T1U
     SendMessage $BL_T1U ${WM_SETFONT} $BL_FRadio 1
     SetCtlColors $BL_T1U 8A8F98 "transparent"
 
-    ${NSD_CreateLabel} 38u 59u 244u 12u "安装到 Program Files，这台电脑的所有账户可用"
+    ${NSD_CreateLabel} 38u 49u 244u 12u "安装到 Program Files，这台电脑的所有账户可用"
     Pop $BL_C1U
     SendMessage $BL_C1U ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $BL_C1U 55585F "transparent"
@@ -448,46 +450,46 @@ FunctionEnd
     ; ---- 第 2 行: 仅为当前用户安装 ----
     System::Call "advapi32::GetUserName(t.r0,*i${NSIS_MAX_STRLEN})"
 
-    ${NSD_CreateLabel} 14u 76u 272u 32u ""
+    ${NSD_CreateLabel} 14u 70u 272u 34u ""
     Pop $BL_P2S
     SetCtlColors $BL_P2S "" 1F2029
 
-    ${NSD_CreateLabel} 22u 82u 12u 14u "●"
+    ${NSD_CreateLabel} 22u 76u 12u 13u "●"
     Pop $BL_D2S
     SendMessage $BL_D2S ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_D2S FF6B00 "transparent"
 
-    ${NSD_CreateLabel} 38u 80u 244u 15u "仅为当前用户安装 ($0)"
+    ${NSD_CreateLabel} 38u 74u 244u 14u "仅为当前用户安装 ($0)"
     Pop $BL_T2S
     SendMessage $BL_T2S ${WM_SETFONT} $BL_FRadio 1
     SetCtlColors $BL_T2S EEEFFC "transparent"
 
-    ${NSD_CreateLabel} 38u 95u 244u 12u "安装到个人应用目录，无需管理员权限"
+    ${NSD_CreateLabel} 38u 89u 244u 12u "安装到个人应用目录，无需管理员权限"
     Pop $BL_C2S
     SendMessage $BL_C2S ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $BL_C2S C9CBD1 "transparent"
 
-    ${NSD_CreateLabel} 14u 76u 272u 32u ""
+    ${NSD_CreateLabel} 14u 70u 272u 34u ""
     Pop $BL_P2U
     SetCtlColors $BL_P2U "" 1F2029
 
-    ${NSD_CreateLabel} 22u 82u 12u 14u "○"
+    ${NSD_CreateLabel} 22u 76u 12u 13u "○"
     Pop $BL_D2U
     SendMessage $BL_D2U ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_D2U 55585F "transparent"
 
-    ${NSD_CreateLabel} 38u 80u 244u 15u "仅为当前用户安装 ($0)"
+    ${NSD_CreateLabel} 38u 74u 244u 14u "仅为当前用户安装 ($0)"
     Pop $BL_T2U
     SendMessage $BL_T2U ${WM_SETFONT} $BL_FRadio 1
     SetCtlColors $BL_T2U 8A8F98 "transparent"
 
-    ${NSD_CreateLabel} 38u 95u 244u 12u "安装到个人应用目录，无需管理员权限"
+    ${NSD_CreateLabel} 38u 89u 244u 12u "安装到个人应用目录，无需管理员权限"
     Pop $BL_C2U
     SendMessage $BL_C2U ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $BL_C2U 55585F "transparent"
 
-    ; 底部说明
-    ${NSD_CreateLabel} 14u 114u 272u 28u ""
+    ; 底部说明 (预留品牌条空间, 高度 22u 容纳两行 12pt)
+    ${NSD_CreateLabel} 14u 110u 272u 22u ""
     Pop $BL_Info
     SendMessage $BL_Info ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $BL_Info EEEFFC "transparent"
@@ -568,46 +570,46 @@ FunctionEnd
     SetCtlColors $0 "" 181920
     Call BL_DarkFrame
 
-    ${NSD_CreateIcon} 14u 8u 28u 28u ""
+    ${NSD_CreateIcon} 14u 10u 28u 28u ""
     Pop $0
     ${NSD_SetIconFromInstaller} $0 $BL_Icon
 
-    ${NSD_CreateLabel} 52u 8u 240u 26u "安装完成"
+    ${NSD_CreateLabel} 52u 10u 240u 24u "安装完成"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FTitle 1
     SetCtlColors $0 EEEFFC "transparent"
 
-    ${NSD_CreateLabel} 14u 48u 272u 30u "${PRODUCT_NAME} 已安装到：$\r$\n$INSTDIR"
+    ${NSD_CreateLabel} 14u 44u 272u 24u "${PRODUCT_NAME} 已安装到：$\r$\n$INSTDIR"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $0 8A8F98 "transparent"
 
-    ${NSD_CreateLabel} 14u 88u 272u 3u "" ; 橙色分隔条
+    ${NSD_CreateLabel} 14u 78u 272u 3u "" ; 橙色分隔条
     Pop $0
     SetCtlColors $0 FF6B00 FF6B00
 
     ; "立即启动" 行 — 点击切换, 两套叠加
-    ${NSD_CreateLabel} 14u 100u 12u 14u "●"     ; 选中态
+    ${NSD_CreateLabel} 14u 92u 12u 13u "●"     ; 选中态
     Pop $BL_RunS
     SendMessage $BL_RunS ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_RunS FF6B00 "transparent"
 
-    ${NSD_CreateLabel} 28u 100u 240u 14u "立即启动 ${PRODUCT_NAME}"
+    ${NSD_CreateLabel} 28u 92u 240u 13u "立即启动 ${PRODUCT_NAME}"
     Pop $BL_RnTS
     SendMessage $BL_RnTS ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_RnTS EEEFFC "transparent"
 
-    ${NSD_CreateLabel} 14u 100u 12u 14u "○"     ; 未选中态
+    ${NSD_CreateLabel} 14u 92u 12u 13u "○"     ; 未选中态
     Pop $BL_RunU
     SendMessage $BL_RunU ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_RunU 55585F "transparent"
 
-    ${NSD_CreateLabel} 28u 100u 240u 14u "立即启动 ${PRODUCT_NAME}"
+    ${NSD_CreateLabel} 28u 92u 240u 13u "立即启动 ${PRODUCT_NAME}"
     Pop $BL_RnTU
     SendMessage $BL_RnTU ${WM_SETFONT} $BL_FBody 1
     SetCtlColors $BL_RnTU 8A8F98 "transparent"
 
-    ${NSD_CreateLabel} 14u 124u 280u 13u "可在 Windows 设置或控制面板中卸载"
+    ${NSD_CreateLabel} 14u 112u 280u 13u "可在 Windows 设置或控制面板中卸载"
     Pop $0
     SendMessage $0 ${WM_SETFONT} $BL_FSmall 1
     SetCtlColors $0 55585F "transparent"
