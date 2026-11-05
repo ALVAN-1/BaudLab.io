@@ -227,6 +227,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveFile: (params) => ipcRenderer.invoke('export:saveFile', params)
   },
 
+  // --- 串口日志 ---
+  log: {
+    getSaveDir: () => ipcRenderer.invoke('log:get-save-dir'),
+    chooseSaveDir: () => ipcRenderer.invoke('log:choose-save-dir')
+  },
+
   // --- 协议导入 ---
   import: {
     openFile: () => ipcRenderer.invoke('import:openFile')

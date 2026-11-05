@@ -85,31 +85,87 @@
                     v-for="(f, fi) in cmd.fields"
                     :key="f.name"
                     class="df-block"
-                    :class="dfSizeClass(f) + ' df-c' + (fi % DF_COLORS)"
+                    :class="[dfSizeClass(f) + ' df-c' + (fi % DF_COLORS), { 'df-linked': linkedFieldKey === fieldHoverKey(cmd, fi), 'prop-tip': hasPhysProps(f) }]"
+                    :data-tip="fieldPropTooltip(f)"
+                    @mouseenter="linkedFieldKey = fieldHoverKey(cmd, fi)"
+                    @mouseleave="linkedFieldKey = ''"
                   >
                     <span class="df-bname">{{ f.name }}</span>
                     <span class="df-bsize">{{ f.length || 1 }}B · {{ typeLabel(f.type) }}</span>
                   </div>
                 </div>
-                <!-- 位域/枚举详情：expandAll 模式常驻展开，默认预览按开关展开 -->
+                <!-- 位域/枚举详情：expandAll 模式常驻展开，默认预览按开关展开；
+                     颜色与上方字段色块（df-cN）一一对应，悬停任一侧对应字段联动高亮 -->
                 <div v-if="hasBitDetails(cmd) && (expandAll || bitOpenMap[cmdKey(cmd)])" class="bit-details-open">
-                  <!-- 位域 -->
-                  <div v-for="f in cmd.fields.filter(f => f.type === 'bitfield')" :key="f.name" class="bit-byte-row">
-                    <div class="bit-byte-tag" :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)">{{ f.name }}</div>
-                    <div class="bit-byte-bits">
-                      <div v-for="bitNum in [7,6,5,4,3,2,1,0]" :key="bitNum" class="bit-cell" :class="isReservedBit(f, bitNum) ? 'df-bit-reserved' : 'df-bit-defined'">
+                  <!-- 位域：每个 bit 同时展示 0 / 1 两种含义。
+                       悬停触发只在内容（标签/格子）上，行内空白区域不触发改 -->
+                  <div
+                    v-for="f in cmd.fields.filter(f => f.type === 'bitfield')"
+                    :key="f.name"
+                    class="bit-byte-row"
+                    :class="{ 'bit-row-linked': linkedFieldKey === fieldHoverKey(cmd, cmd.fields.indexOf(f)) }"
+                    @mouseleave="linkedFieldKey = ''"
+                  >
+                    <div
+                      class="bit-byte-tag"
+                      :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)"
+                      @mouseenter="linkedFieldKey = fieldHoverKey(cmd, cmd.fields.indexOf(f))"
+                    >{{ f.name }}</div>
+                    <div
+                      class="bit-byte-bits"
+                      :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)"
+                      @mouseenter="linkedFieldKey = fieldHoverKey(cmd, cmd.fields.indexOf(f))"
+                    >
+                      <div
+                        v-for="bitNum in [7,6,5,4,3,2,1,0]"
+                        :key="bitNum"
+                        class="bit-cell"
+                        :class="isReservedBit(f, bitNum) ? 'df-bit-reserved' : 'df-bit-defined'"
+                      >
                         <span class="bit-bi">Bit{{ bitNum }}</span>
-                        <span class="bit-bv">{{ (f.bits[bitNum] && f.bits[bitNum].one) || '—' }}</span>
+                        <template v-if="!isReservedBit(f, bitNum)">
+                          <span
+                            v-if="f.bits[bitNum].zero"
+                            class="bit-bv-row"
+                            :title="`Bit${bitNum} = 0：${f.bits[bitNum].zero}`"
+                          >
+                            <i class="bit-v-tag">0</i>
+                            <span class="bit-bv">{{ f.bits[bitNum].zero }}</span>
+                          </span>
+                          <span
+                            v-if="f.bits[bitNum].one"
+                            class="bit-bv-row"
+                            :title="`Bit${bitNum} = 1：${f.bits[bitNum].one}`"
+                          >
+                            <i class="bit-v-tag on">1</i>
+                            <span class="bit-bv">{{ f.bits[bitNum].one }}</span>
+                          </span>
+                        </template>
+                        <span v-else class="bit-bv bit-bv-reserved">预留</span>
                       </div>
                     </div>
                   </div>
                   <!-- 枚举 -->
-                  <div v-for="f in cmd.fields.filter(f => f.type === 'enum')" :key="f.name" class="bit-byte-row">
-                    <div class="bit-byte-tag" :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)">{{ f.name }}</div>
-                    <div class="bit-byte-bits">
+                  <div
+                    v-for="f in cmd.fields.filter(f => f.type === 'enum')"
+                    :key="f.name"
+                    class="bit-byte-row"
+                    :class="{ 'bit-row-linked': linkedFieldKey === fieldHoverKey(cmd, cmd.fields.indexOf(f)) }"
+                    @mouseleave="linkedFieldKey = ''"
+                  >
+                    <div
+                      class="bit-byte-tag"
+                      :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)"
+                      @mouseenter="linkedFieldKey = fieldHoverKey(cmd, cmd.fields.indexOf(f))"
+                    >{{ f.name }}</div>
+                    <div
+                      class="bit-byte-bits"
+                      :class="'df-c' + (cmd.fields.indexOf(f) % DF_COLORS)"
+                      @mouseenter="linkedFieldKey = fieldHoverKey(cmd, cmd.fields.indexOf(f))"
+                    >
                       <div v-for="opt in f.enumItems" :key="opt.value" class="bit-cell df-bit-defined">
                         <span class="bit-bi">0x{{ String(opt.value).toUpperCase().padStart(2, '0') }}</span>
-                        <span class="bit-bv">{{ opt.meaning || '—' }}</span>
+                        <span class="bit-bv bit-bv-single">{{ opt.meaning || '—' }}</span>
                       </div>
                     </div>
                   </div>
@@ -139,6 +195,15 @@ const props = defineProps({
 });
 
 const DF_COLORS = 6;
+
+/* 字段色块 ↔ 位域/枚举/属性详情行 悬停联动。
+ * key 必须带命令标识（cmd+name）：索引在不同命令间会撞号，
+ * 否则悬停 A 命令的字段1 会误高亮 B 命令的字段1 */
+const linkedFieldKey = ref('');
+
+function fieldHoverKey(cmd, idx) {
+  return `${cmdKey(cmd)}#${idx}`;
+}
 const CAT_NAMES = {
   general: '通用', control: '控制', fault: '故障',
   status: '状态', query: '查询', config: '配置', response: '响应',
@@ -215,6 +280,20 @@ function isReservedBit(field, bitNum) {
   const b = field.bits?.[bitNum];
   if (!b) return true;
   return !b.one && !b.zero;
+}
+/* 字段是否配置了物理属性（单位/最小/最大/偏移/备注）——决定色块是否带悬浮气泡 */
+function hasPhysProps(f) {
+  return !!(f.unit || f.physMin || f.physMax || f.offset || f.remark);
+}
+/* 字段属性气泡文本：一行一项，未配置的项不出现 */
+function fieldPropTooltip(f) {
+  const lines = [];
+  if (f.unit) lines.push(`单位：${f.unit}`);
+  if (f.physMin || f.physMax) lines.push(`物理范围：${f.physMin || '-'} ~ ${f.physMax || '-'}`);
+  if (f.offset) lines.push(`偏移量：${f.offset}`);
+  if (f.scale !== undefined && f.scale !== null && Number(f.scale) !== 1) lines.push(`缩放：×${f.scale}`);
+  if (f.remark) lines.push(`备注：${f.remark}`);
+  return lines.join('\n');
 }
 /* 字段块尺寸样式 */
 function dfSizeClass(f) {
@@ -489,6 +568,23 @@ const visibleCommands = computed(() => {
 .df-c4 { background: rgba(239, 68, 68, 0.12);  border-color: rgba(239, 68, 68, 0.35); }
 .df-c5 { background: rgba(14, 165, 233, 0.12); border-color: rgba(14, 165, 233, 0.35); }
 
+/* 字段色块 ↔ 详情行 悬停联动：双方同时蓝色脉冲闪烁 */
+@keyframes df-link-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4); }
+}
+.df-block.df-linked {
+  animation: df-link-pulse 1s ease-in-out infinite;
+  border-color: var(--accent-blue) !important;
+}
+.bit-byte-row.bit-row-linked .bit-byte-tag {
+  animation: df-link-pulse 1s ease-in-out infinite;
+  border-color: var(--accent-blue) !important;
+}
+.bit-byte-row.bit-row-linked .bit-cell.df-bit-defined {
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
 /* 展开的位域/枚举详情 */
 .bit-details-open {
   margin-top: 8px;
@@ -509,19 +605,43 @@ const visibleCommands = computed(() => {
   white-space: nowrap;
   border: 1px solid var(--border-light);
   background: var(--bg-secondary);
+  /* 统一标签列宽度：各行枚举格子从同一竖线起排（约容纳 7 个中文字符，更长则自适应扩展） */
+  min-width: 96px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 .bit-byte-bits {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
 }
+
+/* 详情区与上方字段色块同色（df-cN 双类名特异性高于 .bit-byte-tag 默认底色） */
+.bit-byte-tag.df-c0 { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); }
+.bit-byte-tag.df-c1 { background: rgba(39, 166, 68, 0.12);  border-color: rgba(39, 166, 68, 0.35); }
+.bit-byte-tag.df-c2 { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); }
+.bit-byte-tag.df-c3 { background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.35); }
+.bit-byte-tag.df-c4 { background: rgba(239, 68, 68, 0.12);  border-color: rgba(239, 68, 68, 0.35); }
+.bit-byte-tag.df-c5 { background: rgba(14, 165, 233, 0.12); border-color: rgba(14, 165, 233, 0.35); }
+
+.bit-byte-bits.df-c0 .bit-cell.df-bit-defined { background: rgba(59, 130, 246, 0.07); border-color: rgba(59, 130, 246, 0.25); }
+.bit-byte-bits.df-c1 .bit-cell.df-bit-defined { background: rgba(39, 166, 68, 0.07);  border-color: rgba(39, 166, 68, 0.25); }
+.bit-byte-bits.df-c2 .bit-cell.df-bit-defined { background: rgba(245, 158, 11, 0.07); border-color: rgba(245, 158, 11, 0.25); }
+.bit-byte-bits.df-c3 .bit-cell.df-bit-defined { background: rgba(139, 92, 246, 0.07); border-color: rgba(139, 92, 246, 0.25); }
+.bit-byte-bits.df-c4 .bit-cell.df-bit-defined { background: rgba(239, 68, 68, 0.07);  border-color: rgba(239, 68, 68, 0.25); }
+.bit-byte-bits.df-c5 .bit-cell.df-bit-defined { background: rgba(14, 165, 233, 0.07); border-color: rgba(14, 165, 233, 0.25); }
+
 .bit-cell {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   padding: 3px 6px;
   border-radius: 3px;
-  min-width: 44px;
+  min-width: 60px;
+  max-width: 132px;
   border: 1px solid var(--border-light);
 }
 .bit-cell.df-bit-defined { background: var(--bg-secondary); }
@@ -530,8 +650,77 @@ const visibleCommands = computed(() => {
   border-style: dashed;
   opacity: 0.55;
 }
-.bit-bi { font-size: 9.5px; color: var(--text-tertiary); font-family: 'Consolas', monospace; }
-.bit-bv { font-size: 10.5px; color: var(--text-primary); text-align: center; }
+.bit-bi { font-size: 9.5px; color: var(--text-tertiary); font-family: 'Consolas', monospace; text-align: center; }
+
+/* 单个 bit 的 0/1 含义行：小方块数值标签 + 含义文本 */
+.bit-bv-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  margin-top: 2px;
+}
+.bit-v-tag {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(100, 116, 139, 0.16);
+  color: var(--text-tertiary);
+}
+.bit-v-tag.on {
+  background: rgba(59, 130, 246, 0.18);
+  color: var(--accent-blue);
+}
+.bit-bv {
+  font-size: 10.5px;
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bit-bv-single { text-align: center; }
+.bit-bv-reserved { text-align: center; color: var(--text-tertiary); font-size: 10px; }
+
+/* 字段物理属性悬浮气泡：配置了 单位/范围/偏移/备注 的色块（.prop-tip）
+ * 悬浮时在上方弹出，一行一项；纯 CSS 实现，不占任何版面 */
+.prop-tip {
+  position: relative;
+  cursor: help;
+}
+.prop-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: #1f2937;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: pre-line;
+  width: max-content;
+  max-width: 280px;
+  text-align: left;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  z-index: 30;
+}
+.prop-tip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
 
 .master-muted { font-size: 13px; color: var(--text-tertiary); }
 
@@ -572,8 +761,17 @@ const visibleCommands = computed(() => {
 .master-plain .df-bsize { color: #888; }
 .master-plain .bit-details-open { border-top-color: #e5e7eb; }
 .master-plain .bit-byte-tag { border-color: #e5e7eb; background: #fafafa; }
+.master-plain .bit-byte-tag.df-c0 { background: rgba(59, 130, 246, 0.10); border-color: rgba(59, 130, 246, 0.30); }
+.master-plain .bit-byte-tag.df-c1 { background: rgba(39, 166, 68, 0.10);  border-color: rgba(39, 166, 68, 0.30); }
+.master-plain .bit-byte-tag.df-c2 { background: rgba(245, 158, 11, 0.10); border-color: rgba(245, 158, 11, 0.30); }
+.master-plain .bit-byte-tag.df-c3 { background: rgba(139, 92, 246, 0.10); border-color: rgba(139, 92, 246, 0.30); }
+.master-plain .bit-byte-tag.df-c4 { background: rgba(239, 68, 68, 0.10);  border-color: rgba(239, 68, 68, 0.30); }
+.master-plain .bit-byte-tag.df-c5 { background: rgba(14, 165, 233, 0.10); border-color: rgba(14, 165, 233, 0.30); }
 .master-plain .bit-cell { border-color: #e5e7eb; }
 .master-plain .bit-cell.df-bit-defined { background: #fafafa; }
+.master-plain .bit-v-tag { background: rgba(100, 116, 139, 0.14); color: #6b7280; }
+.master-plain .bit-v-tag.on { background: rgba(59, 130, 246, 0.15); color: #1d4ed8; }
+.master-plain .bit-bv-reserved { color: #888; }
 .master-plain .bit-bi { color: #888; }
 .master-plain .bit-bv { color: #1a1a1a; }
 .master-plain .master-muted { color: #888; }

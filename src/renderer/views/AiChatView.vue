@@ -98,6 +98,8 @@
         </div>
 
         <div v-for="m in messages" :key="m.id" class="ai-msg" :class="m.role">
+          <!-- AI 头像 = 应用 logo -->
+          <img v-if="m.role === 'assistant'" :src="logoUrl" class="ai-avatar" alt="AI" draggable="false" />
           <div class="ai-bubble">
             <template v-if="m.role === 'user'">
               <div v-if="m.attachments && m.attachments.length" class="ai-att-row">
@@ -121,7 +123,13 @@
               </div>
               <div class="ai-ai-text" v-html="renderMarkdown(m.content)"></div>
               <span v-if="m.streaming && !m.content && !(m.toolCalls && m.toolCalls.length)" class="ai-thinking">
-                <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>思考中
+                <!-- UART 帧波形动画：空闲(高) → 起始位(低) → 8 数据位('A' 0x41) → 停止位(高)，循环滚动 -->
+                <svg class="uart-wave" width="40" height="14" viewBox="0 0 64 16" fill="none" aria-hidden="true">
+                  <g class="uart-wave-move">
+                    <path class="uart-wave-line" d="M0 3 H8 V13 H12 V3 H16 V13 H36 V3 H40 V13 H44 V3 H64" />
+                    <path class="uart-wave-line" d="M0 3 H8 V13 H12 V3 H16 V13 H36 V3 H40 V13 H44 V3 H64" transform="translate(64)" />
+                  </g>
+                </svg>思考中
               </span>
               <span v-else-if="m.streaming" class="ai-caret">▍</span>
               <button v-if="m.jsonData" class="ai-copy-btn" @click="copyJson(m)">{{ copiedId === m.id ? '已复制' : '复制 JSON' }}</button>
@@ -131,6 +139,8 @@
               </div>
             </template>
           </div>
+          <!-- 用户头像（右侧）：与侧栏账号头像同款，姓名首字母 + 品牌渐变 -->
+          <span v-if="m.role === 'user'" class="ai-avatar ai-avatar-user" :title="chatUserName">{{ chatUserInitials }}</span>
         </div>
       </div>
 
@@ -212,6 +222,14 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useAiChat } from '../composables/useAiChat';
 import { buildProtocolContextText, buildSerialContextText, PROTOCOL_JSON_PROMPT } from '../composables/useToolContext';
 import { renderMarkdown } from '../utils/aiMarkdown';
+import logoUrl from '../assets/icon.svg';
+import { useCurrentUser } from '../composables/useCurrentUser';
+
+/* 当前用户（全局单例）：用户头像显示姓名首字母，与侧栏账号头像一致 */
+const { currentUser: chatUser, restoreUser } = useCurrentUser();
+if (!chatUser.value) restoreUser();
+const chatUserInitials = computed(() => (chatUser.value?.name || 'U').slice(0, 2).toUpperCase());
+const chatUserName = computed(() => chatUser.value?.name || '未登录');
 
 const props = defineProps({
   /* 视图用 v-show 切换不会重新挂载，激活时刷新配置（设置页保存后回到这里即生效） */
@@ -673,12 +691,28 @@ onMounted(() => {
 .ai-msg { display: flex; }
 .ai-msg.user { justify-content: flex-end; }
 .ai-msg.assistant { justify-content: flex-start; }
+/* 消息头像：AI = 应用 logo 原样（不裁切不描边），用户 = 姓名首字母渐变圆（与侧栏账号头像同款） */
+.ai-avatar {
+  width: 28px; height: 28px;
+  flex-shrink: 0; align-self: flex-start; /* 长回复时头像与气泡顶部对齐 */
+  margin-top: 2px;
+  object-fit: cover;
+}
+.ai-msg.assistant .ai-avatar { margin-right: 8px; }
+.ai-avatar-user {
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: var(--bg-primary);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  margin-left: 8px;
+}
 .ai-bubble {
   max-width: 86%; padding: 10px 14px; border-radius: 10px;
   font-size: 13px; line-height: 1.7; word-break: break-word;
 }
 .ai-msg.user .ai-bubble { background: var(--accent-blue); color: #fff; border-bottom-right-radius: 3px; }
-.ai-msg.assistant .ai-bubble { background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-bottom-left-radius: 3px; }
+.ai-msg.assistant .ai-bubble { background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-bottom-left-radius: 3px; padding: 12px 16px; }
 .ai-user-text { white-space: pre-wrap; }
 .ai-error {
   margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-light);
@@ -686,8 +720,7 @@ onMounted(() => {
 }
 .ai-error-icon { flex-shrink: 0; margin-top: 1px; }
 
-/* AI 回复内的 Markdown 元素（紧凑排版） */
-.ai-p { display: block; }
+/* 工具调用 chips（模板元素，scoped 可正常命中） */
 .ai-tools { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
 .ai-tool-chip {
   display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
@@ -703,42 +736,8 @@ onMounted(() => {
   padding: 4px 10px; font-size: 12px; color: var(--text-secondary); cursor: pointer;
 }
 .ai-copy-btn:hover { color: var(--text-primary); border-color: var(--accent-blue); }
-.ai-h { margin: 16px 0 7px; font-weight: 700; color: var(--text-primary); line-height: 1.4; }
-.ai-bubble .ai-h:first-child { margin-top: 0; }
-.ai-h1 { font-size: 15.5px; }
-.ai-h2 { font-size: 14.5px; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); }
-.ai-h3 { font-size: 13.5px; }
-.ai-h-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 18px; height: 18px; padding: 0 5px; margin-right: 7px;
-  border-radius: 4px; background: var(--accent-blue); color: #fff;
-  font-size: 11.5px; font-weight: 600; vertical-align: 2px;
-}
-.ai-hr { border: none; border-top: 1px solid var(--border-color); margin: 14px 0; }
-.ai-list { margin: 2px 0; padding-left: 22px; }
-.ai-list li { margin: 3px 0; }
-.ai-list li::marker { color: var(--text-tertiary); }
-.ai-list .ai-list { margin: 1px 0; }
-.ai-quote { border-left: 3px solid var(--accent-blue); margin: 8px 0; padding: 2px 12px; color: var(--text-secondary); }
-.ai-inline-code {
-  background: var(--bg-hover); border: 1px solid var(--border-light); border-radius: 4px;
-  padding: 1px 6px; font-family: var(--font-mono, monospace); font-size: 12px; color: var(--text-primary);
-}
-.ai-link { color: var(--accent-blue); text-decoration: underline; text-underline-offset: 2px; }
-.ai-link:hover { opacity: 0.85; }
-.ai-table {
-  border-collapse: collapse; margin: 6px 0 2px; font-size: 12px;
-  max-width: 100%; display: block; overflow-x: auto;
-}
-.ai-table th, .ai-table td { border: 1px solid var(--border-color); padding: 5px 10px; text-align: left; white-space: nowrap; }
-.ai-table th { background: var(--bg-hover); font-weight: 700; }
-
-.ai-code {
-  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-light); border-radius: 6px;
-  padding: 10px 12px; margin: 8px 0 2px; overflow-x: auto;
-  font-family: Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6;
-  color: var(--text-primary); white-space: pre;
-}
+/* 注意：Markdown 元素（.ai-p/.ai-h/.ai-list/.ai-table/.ai-code 等）样式已移至文件末尾的
+ * 非 scoped style 块 —— 它们作用于 v-html 注入的 DOM，不带 scope 属性，scoped 规则命中不了 */
 .ai-caret { color: var(--accent-blue); animation: ai-blink 0.9s infinite; margin-left: 1px; }
 @keyframes ai-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 /* 首 token 延迟期的"思考中"指示 */
@@ -746,13 +745,23 @@ onMounted(() => {
   display: inline-flex; align-items: center; gap: 3px;
   color: var(--text-tertiary); font-size: 12px;
 }
-.ai-dot {
-  width: 4px; height: 4px; border-radius: 50%; background: var(--accent-blue);
-  animation: ai-bounce 1.2s infinite;
+/* UART 波形思考动画：示波器风格，一帧 UART 数据循环向左滚动 */
+.uart-wave {
+  flex-shrink: 0;
+  overflow: hidden;
 }
-.ai-dot:nth-child(2) { animation-delay: 0.15s; }
-.ai-dot:nth-child(3) { animation-delay: 0.3s; }
-@keyframes ai-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-3px); opacity: 1; } }
+.uart-wave-line {
+  stroke: var(--accent-blue);
+  stroke-width: 1.6;
+  stroke-linejoin: miter;
+}
+.uart-wave-move {
+  animation: uart-scroll 1.4s linear infinite;
+}
+@keyframes uart-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-64px); }
+}
 
 /* 输入区 */
 .ai-input-area { border-top: 1px solid var(--border-light); padding: 10px 14px 12px; }
@@ -857,4 +866,49 @@ onMounted(() => {
   cursor: zoom-out;
 }
 .ai-lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 8px; box-shadow: var(--shadow-lg); }
+</style>
+
+<style>
+/* ===== AI 回复 Markdown 排版（非 scoped） =====
+ * v-html 注入的 DOM 不带 scope 属性，scoped 规则（.ai-p[data-v-x]）永远命中不了，
+ * 因此本块必须保持全局。类名均带 ai- 前缀，全局不冲突。
+ * 节奏：段落/列表/小节分层清晰，首尾元素贴边。 */
+.ai-ai-text > :first-child { margin-top: 0 !important; }
+.ai-ai-text > :last-child { margin-bottom: 0 !important; }
+.ai-p { display: block; margin: 6px 0; }
+.ai-h { margin: 16px 0 7px; font-weight: 700; color: var(--text-primary); line-height: 1.4; }
+.ai-ai-text .ai-h:first-child { margin-top: 0; }
+.ai-h1 { font-size: 15.5px; }
+.ai-h2 { font-size: 14.5px; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); }
+.ai-h3 { font-size: 13.5px; }
+.ai-h-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-right: 7px;
+  border-radius: 4px; background: var(--accent-blue); color: #fff;
+  font-size: 11.5px; font-weight: 600; vertical-align: 2px;
+}
+.ai-hr { border: none; border-top: 1px solid var(--border-color); margin: 14px 0; }
+.ai-list { margin: 5px 0 9px; padding-left: 22px; }
+.ai-list li { margin: 4px 0; }
+.ai-list li::marker { color: var(--text-tertiary); }
+.ai-list .ai-list { margin: 2px 0; }
+.ai-quote { border-left: 3px solid var(--accent-blue); margin: 8px 0; padding: 2px 12px; color: var(--text-secondary); }
+.ai-inline-code {
+  background: var(--bg-hover); border: 1px solid var(--border-light); border-radius: 4px;
+  padding: 1px 6px; font-family: var(--font-mono, monospace); font-size: 12px; color: var(--text-primary);
+}
+.ai-link { color: var(--accent-blue); text-decoration: underline; text-underline-offset: 2px; }
+.ai-link:hover { opacity: 0.85; }
+.ai-table {
+  border-collapse: collapse; margin: 6px 0 2px; font-size: 12px;
+  max-width: 100%; display: block; overflow-x: auto;
+}
+.ai-table th, .ai-table td { border: 1px solid var(--border-color); padding: 5px 10px; text-align: left; white-space: nowrap; }
+.ai-table th { background: var(--bg-hover); font-weight: 700; }
+.ai-code {
+  background: rgba(15, 23, 42, 0.88); border: 1px solid var(--border-light); border-radius: 6px;
+  padding: 10px 12px; margin: 8px 0 2px; overflow-x: auto;
+  font-family: Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6;
+  color: #e2e8f0; white-space: pre;
+}
 </style>

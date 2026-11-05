@@ -165,7 +165,7 @@
       <!-- 协议列表 -->
       <div class="panel protocol-list">
         <div class="panel-header">
-          <svg class="group-chevron list-chevron" :class="{ collapsed: listCollapsed }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" @click="listCollapsed = !listCollapsed"><path d="M6 9l6 6 6-6"/></svg>
+          <svg class="list-chevron" :class="{ collapsed: listCollapsed }" width="15" height="15" fill="none" @click="listCollapsed = !listCollapsed"><use href="#i-collapse-left"/></svg>
           <h3 class="list-title" @click="listCollapsed = !listCollapsed">协议列表</h3>
           <input v-show="!listCollapsed" type="text" class="input search" placeholder="搜索协议...">
           <div v-show="listCollapsed" class="folded-stack">
@@ -544,6 +544,11 @@
                 <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/></svg>
                 <svg class="icon-compress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"/></svg>
               </button>
+              <!-- 命令增删入口：从「命令字详情」头部上移到面板头部，右侧与折叠箭头同排 -->
+              <div class="panel-header-actions">
+                <button class="btn btn-secondary btn-small" type="button" @click.stop="addCommand">+ 新增命令字</button>
+                <button class="btn btn-danger btn-small" type="button" :disabled="!activeCommand" @click.stop="deleteCommand">删除命令字</button>
+              </div>
               <button
                 class="panel-toggle"
                 type="button"
@@ -576,18 +581,28 @@
                       v-for="item in filteredCommandsWithIndex"
                       :key="item.originalIdx"
                       class="command-card"
-                      :class="{ active: item.originalIdx === activeCommandIndex }"
+                      :class="{ active: item.originalIdx === activeCommandIndex, 'drag-over': dragOverCmdIdx === item.originalIdx, dragging: dragCmdIdx === item.originalIdx }"
+                      :draggable="canDragCommands"
+                      :title="canDragCommands ? '拖拽可调整命令顺序' : '搜索/筛选状态下暂不支持拖拽排序'"
                       @click="activeCommandIndex = item.originalIdx"
+                      @dragstart="onCmdDragStart(item.originalIdx, $event)"
+                      @dragover.prevent="onCmdDragOver(item.originalIdx)"
+                      @dragleave="onCmdDragLeave(item.originalIdx)"
+                      @drop.prevent="onCmdDrop(item.originalIdx)"
+                      @dragend="onCmdDragEnd"
                       @mouseenter="onCmdHover($event, item.cmd)"
                       @mouseleave="hoveredCmd = null"
                     >
                       <div class="command-card-title"><code>{{ item.cmd.cmd }}</code> {{ item.cmd.name }}</div>
                       <div class="command-card-meta">
-                        <span class="meta-box meta-sender">{{ item.cmd.sender }}</span>
+                        <span class="meta-box" :class="metaColorClass(item.cmd.sender)">{{ item.cmd.sender }}</span>
                         <span class="meta-arrow"></span>
-                        <span class="meta-box meta-receiver">{{ item.cmd.receiver }}</span>
+                        <span class="meta-box" :class="metaColorClass(item.cmd.receiver)">{{ item.cmd.receiver }}</span>
                         <span class="meta-box meta-cycle">{{ item.cmd.cycle }}ms</span>
                       </div>
+                    </div>
+                    <div v-if="!canDragCommands && filteredCommandsWithIndex.length > 1" class="command-drag-hint">
+                      筛选/搜索状态下不支持拖拽排序，清空后可拖拽调整顺序
                     </div>
                   </div>
                 </div>
@@ -619,10 +634,6 @@
                 <div class="command-detail">
                   <div class="command-detail-header">
                     <h4>命令字详情</h4>
-                    <div class="command-detail-actions">
-                      <button class="btn btn-secondary btn-small" @click="addCommand">+ 新增命令字</button>
-                      <button class="btn btn-danger btn-small" :disabled="!activeCommand" @click="deleteCommand">删除命令字</button>
-                    </div>
                   </div>
                   <div v-if="activeCommand">
                   <div class="form-row inline">
@@ -649,29 +660,29 @@
                     </div>
                   </div>
                   <div class="form-row inline">
-                    <div>
+                    <div class="sender-field">
                       <label>发送方</label>
                       <select class="input" v-model="activeCommand.sender">
                         <option v-for="mod in moduleAddresses" :key="mod.name" :value="mod.name">{{ mod.name }}</option>
                       </select>
                     </div>
-                    <div>
+                    <div class="receiver-field">
                       <label>接收方</label>
                       <select class="input" v-model="activeCommand.receiver">
                         <option v-for="mod in moduleAddresses" :key="mod.name" :value="mod.name">{{ mod.name }}</option>
                       </select>
                     </div>
-                    <div><label>周期 (ms)</label><input type="number" class="input" v-model="activeCommand.cycle" min="0"></div>
+                    <div class="cycle-field"><label>周期 (ms)</label><input type="number" class="input" v-model="activeCommand.cycle" min="0"></div>
                   </div>
                   <div class="form-row inline payload-len-row">
-                    <div>
+                    <div class="payload-mode-field">
                       <label>载荷模式</label>
-                      <select class="input" style="width:auto" :value="activeCommand.payloadMode || 'fixed'" @change="onPayloadModeChange">
+                      <select class="input" :value="activeCommand.payloadMode || 'fixed'" @change="onPayloadModeChange">
                         <option value="fixed">固定长度</option>
                         <option value="varlen">变长 (LEN字段)</option>
                       </select>
                     </div>
-                    <div v-if="activeCommand.payloadMode !== 'varlen'">
+                    <div v-if="activeCommand.payloadMode !== 'varlen'" class="payload-len-field">
                       <label>载荷字节数</label>
                       <div class="payload-len-inline">
                         <input
@@ -684,12 +695,12 @@
                         <span class="payload-usage-note">上限 {{ payloadLenMax }} 字节，已用 {{ getFieldBytesTotal(activeCommand.fields) }} 字节</span>
                       </div>
                     </div>
-                    <div v-else>
+                    <div v-else class="payload-len-field">
                       <label>载荷长度</label>
                       <span class="payload-usage-note">变长模式：运行时从 LEN 字段读取实际字节数（上限 {{ payloadLenMax }}）</span>
                     </div>
                   </div>
-                  <div class="section-header-row" style="margin-top:12px">
+                  <div class="section-header-row field-section-header" style="margin-top:12px">
                     <div class="section-title">字段列表</div>
                     <div class="section-actions">
                       <button class="btn btn-secondary btn-small" @click="addField">+ 添加字段</button>
@@ -736,12 +747,20 @@
                         </td>
                         <td>
                           <div class="command-field-config" @click.stop>
-                            <!-- 位域解析 -->
+                            <!-- 位域解析：卡片式，左侧 Bit 徽标，右侧 0/1 含义堆叠 -->
                             <div v-if="field.type === 'bitfield'" class="bit-field-grid">
                               <div class="bit-field-item" v-for="(bit, bi) in field.bits" :key="bi">
-                                <label>Bit{{ bit.bit }}</label>
-                                <input type="text" class="input" placeholder="0含义" v-model="bit.zero">
-                                <input type="text" class="input" placeholder="1含义" v-model="bit.one">
+                                <span class="bit-badge">Bit{{ bit.bit }}</span>
+                                <div class="bit-value-col">
+                                  <label class="bit-value-row">
+                                    <span class="bit-value-tag">0</span>
+                                    <input type="text" class="input bit-value-input" placeholder="为 0 时的含义" v-model="bit.zero">
+                                  </label>
+                                  <label class="bit-value-row">
+                                    <span class="bit-value-tag on">1</span>
+                                    <input type="text" class="input bit-value-input" placeholder="为 1 时的含义" v-model="bit.one">
+                                  </label>
+                                </div>
                               </div>
                             </div>
                             <!-- 枚举映射 -->
@@ -784,8 +803,7 @@
                                 <option value="float32">float32 (4B)</option>
                                 <option value="float64">float64 (8B)</option>
                               </select>
-                              <input type="number" class="input" style="width:70px" v-model="field.scale" step="0.1" title="缩放系数: 物理值 = 原始值 × scale">
-                              <input type="text" class="input" style="width:50px" v-model="field.unit" placeholder="单位" title="物理单位">
+                              <input type="number" class="input" style="width:70px" v-model="field.scale" step="0.1" title="缩放系数: 物理值 = 原始值 × scale（偏移量/单位在下方物理属性行配置）">
                             </div>
                             <!-- 文本/JSON -->
                             <div v-else-if="field.type === 'text'" class="field-config-row" style="flex-wrap:wrap;gap:6px">
@@ -827,6 +845,19 @@
                                 <option value="hex">HEX 显示</option>
                                 <option value="base64">Base64</option>
                               </select>
+                            </div>
+                            <!-- 物理属性（所有字段类型通用）：未配置时默认显示 / -->
+                            <div class="field-phys-row">
+                              <span class="field-phys-label">单位</span>
+                              <input type="text" class="input field-phys-input" v-model="field.unit" placeholder="/" title="物理单位">
+                              <span class="field-phys-label">最小</span>
+                              <input type="text" class="input field-phys-input" v-model="field.physMin" placeholder="/" title="物理最小值" inputmode="decimal">
+                              <span class="field-phys-label">最大</span>
+                              <input type="text" class="input field-phys-input" v-model="field.physMax" placeholder="/" title="物理最大值" inputmode="decimal">
+                              <span class="field-phys-label">偏移</span>
+                              <input type="text" class="input field-phys-input" v-model="field.offset" placeholder="/" title="偏移量：物理值 = 原始值 × 缩放 + 偏移" inputmode="decimal">
+                              <span class="field-phys-label">备注</span>
+                              <input type="text" class="input field-phys-input field-phys-remark" v-model="field.remark" placeholder="/" title="备注">
                             </div>
                           </div>
                         </td>
@@ -990,6 +1021,28 @@
           <div class="modal-footer">
             <button class="btn btn-secondary" @click="closeArchiveDialog">取消</button>
             <button class="btn btn-primary" :disabled="!effectiveSelectedProject" @click="confirmArchive">确认归档</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 删除协议确认弹窗（涉及服务器数据时二次确认，替代原生 confirm） -->
+    <Transition name="modal">
+      <div v-if="deleteConfirm.visible" class="modal-overlay" @click="closeDeleteConfirm">
+        <div class="modal-dialog delete-dialog" @click.stop>
+          <div class="modal-header">
+            <h3>删除协议</h3>
+            <button class="modal-close" @click="closeDeleteConfirm" title="关闭">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-close" /></svg>
+            </button>
+          </div>
+          <div class="modal-body delete-confirm-body">
+            <svg class="delete-warn-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-alert-circle"/></svg>
+            <p>确定删除「{{ deleteConfirm.proto?.name }}」？将同时删除服务器数据，不可恢复。</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeDeleteConfirm">取消</button>
+            <button class="btn btn-danger" @click="confirmDelete">删除</button>
           </div>
         </div>
       </div>
@@ -1649,6 +1702,12 @@ const cmdByteInputs = computed({
     const targetCount = getByteCount('cmd');
     if (!activeCommand.value) return [];
     const bytes = activeCommand.value.cmdBytes;
+    /* 逐字节规范化为两位十六进制：maxlength 只拦手动输入，
+     * 程序赋值（历史脏数据/导入兜底）可能塞进超宽值，显示前统一收敛 */
+    for (let i = 0; i < bytes.length; i++) {
+      const norm = String(bytes[i] ?? '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase().slice(0, 2);
+      if (norm !== bytes[i]) bytes[i] = norm || '00';
+    }
     /* 填充不足的字节 */
     while (bytes.length < targetCount) {
       bytes.push('00');
@@ -2213,15 +2272,27 @@ function onCmdByteInput(ci, event) {
   activeCommand.value.cmd = '0x' + activeCommand.value.cmdBytes.join('');
 }
 
+/* 将完整命令码 hex（不含 0x 前缀）按两位一字节大端拆分：
+ * 'E002' → ['E0','02']，'01' → ['01']。供新增命令字与服务器导入兜底共用 */
+function splitCmdHexToBytes(hexStr) {
+  let clean = String(hexStr || '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+  if (!clean) clean = '00';
+  if (clean.length % 2) clean = '0' + clean;
+  return clean.match(/.{2}/g) || ['00'];
+}
+
 function addCommand() {
   const maxCmd = commands.value.reduce((max, c) => {
     const v = parseInt(c.cmd.replace('0x', ''), 16);
     return v > max ? v : max;
   }, 0);
-  const newCmd = (maxCmd + 1).toString(16).padStart(2, '0').toUpperCase();
-  /* 根据 CMD 字段配置的字节数生成 cmdBytes */
+  /* 根据 CMD 字段配置的字节数生成 cmdBytes：新命令码按字节数大端拆分到各字节位，
+   * 每字节固定两位（此前把完整命令码塞进最后一个字节，出现 4 位的"字节"） */
   const cmdCount = getByteCount('cmd');
-  const cmdBytes = Array.from({ length: cmdCount }, (_, i) => i === cmdCount - 1 ? newCmd : '00');
+  const capacity = 16 ** (cmdCount * 2);
+  let next = maxCmd + 1;
+  if (next >= capacity) next = 1; /* 超出当前字节数可表示范围则从 1 重新编号 */
+  const cmdBytes = splitCmdHexToBytes(next.toString(16).padStart(cmdCount * 2, '0'));
   commands.value.push({
     cmd: `0x${cmdBytes.join('')}`, cmdBytes, name: '新命令',
     sender: '', receiver: '', dir: 'tx', cycle: '0', fields: [],
@@ -2241,6 +2312,55 @@ function deleteCommand() {
   }
 }
 
+/* ===================== 命令排序（拖拽卡片） ===================== */
+
+/* 模块名 → 稳定配色：同一个模块无论处于发送方还是接收方，颜色保持一致。
+ * 按名字哈希取色，避免"在前蓝色、在后绿色"的位置化配色 */
+const META_COLOR_COUNT = 6;
+function metaColorClass(name) {
+  const s = String(name || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return `meta-c${h % META_COLOR_COUNT}`;
+}
+
+const dragCmdIdx = ref(-1);
+const dragOverCmdIdx = ref(-1);
+/* 仅在「全部 + 无搜索」时开放拖拽：筛选视图下卡片位置与数组下标不对应，
+ * 强行排序会造成落点歧义 */
+const canDragCommands = computed(() => commandFilter.value === 'all' && !commandSearch.value.trim());
+
+function onCmdDragStart(idx, event) {
+  if (!canDragCommands.value) { event.preventDefault(); return; }
+  dragCmdIdx.value = idx;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', String(idx));
+}
+
+function onCmdDragOver(idx) {
+  if (dragCmdIdx.value < 0 || dragCmdIdx.value === idx) return;
+  dragOverCmdIdx.value = idx;
+}
+
+function onCmdDragLeave(idx) {
+  if (dragOverCmdIdx.value === idx) dragOverCmdIdx.value = -1;
+}
+
+function onCmdDrop(idx) {
+  const from = dragCmdIdx.value;
+  if (from >= 0 && from !== idx) {
+    const [moved] = commands.value.splice(from, 1);
+    commands.value.splice(idx, 0, moved);
+    activeCommandIndex.value = idx;
+  }
+  onCmdDragEnd();
+}
+
+function onCmdDragEnd() {
+  dragCmdIdx.value = -1;
+  dragOverCmdIdx.value = -1;
+}
+
 function addField() {
   if (!activeCommand.value) return;
   if (!isCmdVarlen(activeCommand.value)) {
@@ -2252,8 +2372,8 @@ function addField() {
     }
   }
   activeCommand.value.fields.push({
-    name: '新字段', type: 'bitfield', length: 1,
-    bits: Array.from({ length: 8 }, (_, i) => ({ bit: i, zero: '', one: '' })),
+    name: '新字段', type: 'enum', length: 1,
+    enumItems: [{ value: '00', meaning: '' }],
   });
 }
 
@@ -2482,13 +2602,54 @@ async function unsavedSaveAndSwitch() {
  * 若删除的是当前选中的协议，自动切换到列表中的第一个
  * @param {object} proto - 协议列表项
  */
-async function deleteProtocol(proto) {
+/* 删除确认弹窗：涉及服务器数据时二次确认（替代原生 confirm，风格与应用内弹窗统一） */
+const deleteConfirm = reactive({ visible: false, proto: null });
+
+function closeDeleteConfirm() {
+  deleteConfirm.visible = false;
+  deleteConfirm.proto = null;
+}
+
+/**
+ * 删除协议入口：涉及服务器数据时先弹应用内确认框，纯本地草稿直接删除
+ */
+function deleteProtocol(proto) {
+  if (!proto) return;
+  const touchesServer = hasElectron && isRemoteMode.value && (!proto.draft || !!proto.serverCopy);
+  if (touchesServer) {
+    deleteConfirm.proto = proto;
+    deleteConfirm.visible = true;
+    return;
+  }
+  doDeleteProtocol(proto);
+}
+
+function confirmDelete() {
+  const proto = deleteConfirm.proto;
+  closeDeleteConfirm();
+  if (proto) doDeleteProtocol(proto);
+}
+
+async function doDeleteProtocol(proto) {
   /* 从数据库删除 */
   if (hasElectron) {
     try {
       if (isRemoteMode.value && proto.draft && window.electronAPI.draft) {
-        /* 远程模式 + 草稿：只删除本地草稿，不动服务器 */
+        /* 远程模式 + 草稿：先删除本地草稿 */
         await window.electronAPI.draft.delete(proto.name);
+        /* 服务器上还有同名正式版时（草稿覆盖发布版的场景），必须一并删除服务器副本：
+         * 否则重启后列表从服务器重新加载，被删协议会"复活" */
+        if (proto.serverCopy) {
+          const serverRes = await window.electronAPI.db.batch([
+            { sql: 'DELETE FROM commands WHERE protocol_id IN (SELECT id FROM protocols WHERE name = ?)', params: [proto.name] },
+            { sql: 'DELETE FROM modules WHERE protocol_id IN (SELECT id FROM protocols WHERE name = ?)', params: [proto.name] },
+            { sql: 'DELETE FROM protocols WHERE name = ?', params: [proto.name] },
+          ]);
+          if (serverRes && serverRes.success === false) {
+            showToast(`本地草稿已删除，但服务器删除失败：${serverRes.error || '数据库错误'}，重新打开后协议会从服务器恢复`, 'error');
+            return;
+          }
+        }
       } else {
         /* 本地模式 / 服务器正式版：正常删除 */
         const res = await window.electronAPI.db.batch([
@@ -3579,13 +3740,13 @@ function buildExportMD(state, history) {
     }
 
     L.push('#### 载荷字段总览', '');
-    L.push('| # | 字段名 | 类型 | 定义 |', '| --- | --- | --- | --- |');
+    L.push('| # | 字段名 | 类型 | 定义 | 单位 | 物理最小 | 物理最大 | 偏移量 | 备注 |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
     cmd.fields.forEach((f, fi) => {
       let def = '';
       if (f.type === 'bitfield') def = `${(f.bits || []).filter(b => b.one || b.zero).length} bit 定义`;
       else if (f.type === 'enum') def = `${(f.enumItems || []).length} 个枚举项`;
       else def = `原始值 0x${f.rawValue || '00'}`;
-      L.push(`| ${fi + 1} | ${f.name} | ${fieldTypeLabel(f.type)} | ${def} |`);
+      L.push(`| ${fi + 1} | ${f.name} | ${fieldTypeLabel(f.type)} | ${def} | ${f.unit || '/'} | ${f.physMin || '/'} | ${f.physMax || '/'} | ${f.offset || '/'} | ${f.remark || '/'} |`);
     });
     L.push('');
 
@@ -3710,13 +3871,13 @@ function buildExportHTML(state, history) {
       return;
     }
 
-    P.push('<table>' + th(['#', '字段名', '类型', '定义']));
+    P.push('<table>' + th(['#', '字段名', '类型', '定义', '单位', '物理最小', '物理最大', '偏移量', '备注']));
     cmd.fields.forEach((f, fi) => {
       let def = '';
       if (f.type === 'bitfield') def = `${(f.bits || []).filter(b => b.one || b.zero).length} bit 定义`;
       else if (f.type === 'enum') def = `${(f.enumItems || []).length} 个枚举项`;
       else def = `原始值 0x${f.rawValue || '00'}`;
-      P.push(tr([String(fi + 1), f.name, fieldTypeLabel(f.type), def]));
+      P.push(tr([String(fi + 1), f.name, fieldTypeLabel(f.type), def, f.unit || '/', f.physMin || '/', f.physMax || '/', f.offset || '/', f.remark || '/']));
     });
     P.push('</table>');
 
@@ -4238,7 +4399,7 @@ async function parseProtocolFromRow(p, queryFn) {
     config.commands = cmdResult.rows.map(c => {
       let cmdData = {};
       try { cmdData = JSON.parse(c.config_json || '{}'); } catch (e) { /* ignore */ }
-      const cmdBytes = cmdData.cmdBytes || [c.code.replace('0x', '')];
+      const cmdBytes = cmdData.cmdBytes || splitCmdHexToBytes(c.code.replace('0x', ''));
       return {
         cmd: c.code,
         cmdBytes,
@@ -4247,6 +4408,12 @@ async function parseProtocolFromRow(p, queryFn) {
         receiver: c.receiver || '',
         dir: c.direction === 'send' ? 'tx' : 'rx',
         cycle: String(c.period_ms || 0),
+        /* 载荷模式/载荷字节数必须回读，否则重新打开后退回默认（fixed + DATA 字节数）。
+         * 老数据无 payloadLen 时保持 undefined，让 getCmdPayloadLen 走 DATA 字节数回退 */
+        payloadMode: cmdData.payloadMode || 'fixed',
+        payloadLen: Number.isFinite(+cmdData.payloadLen) && +cmdData.payloadLen >= 0
+          ? Math.floor(+cmdData.payloadLen)
+          : undefined,
         fields: cmdData.fields || [],
       };
     });
@@ -4367,7 +4534,7 @@ async function loadDraftProtocols() {
       config.commands = (detail.commands || []).map(c => {
         let cmdData = {};
         try { cmdData = JSON.parse(c.config_json || '{}'); } catch { /* ignore */ }
-        const cmdBytes = cmdData.cmdBytes || [c.code.replace('0x', '')];
+        const cmdBytes = cmdData.cmdBytes || splitCmdHexToBytes(c.code.replace('0x', ''));
         return {
           cmd: c.code,
           cmdBytes,
@@ -4376,6 +4543,11 @@ async function loadDraftProtocols() {
           receiver: c.receiver || '',
           dir: c.direction === 'send' ? 'tx' : 'rx',
           cycle: String(c.period_ms || 0),
+          /* 载荷模式/载荷字节数必须回读；老数据无 payloadLen 保持 undefined 走 DATA 回退 */
+          payloadMode: cmdData.payloadMode || 'fixed',
+          payloadLen: Number.isFinite(+cmdData.payloadLen) && +cmdData.payloadLen >= 0
+            ? Math.floor(+cmdData.payloadLen)
+            : undefined,
           fields: cmdData.fields || [],
         };
       });
@@ -4456,6 +4628,9 @@ async function loadProtocolsFromDB() {
         const draftNewer = draftMin && auditMin && draftMin > auditMin;
         merged.set(d.name, {
           ...d,
+          /* 标记：服务器上存在同名正式版。删除该条目时需要连服务器副本一起删，
+           * 否则只删本地草稿，重启后从服务器加载会"复活" */
+          serverCopy: true,
           reviewStatus: draftNewer ? null : existing.reviewStatus,
           changeId: draftNewer ? null : existing.changeId,
           draftDirty: draftNewer,
@@ -4773,18 +4948,24 @@ watch(currentUser, async (newUser, oldUser) => {
   gap: 8px;
 }
 .protocol-list .panel-header .input.search {
+  /* 自适应：标题占掉多少，搜索框就缩多少，不再被 220px 固定宽度撑出裁切 */
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 220px;
   margin-left: auto;
 }
 .list-chevron {
   cursor: pointer;
   color: var(--text-secondary);
-  transform: rotate(90deg); /* 展开时箭头朝左，提示向左折叠 */
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 .list-chevron:hover {
   color: var(--text-primary);
 }
 .list-chevron.collapsed {
-  transform: rotate(-90deg); /* 折叠后箭头朝右，点击展开 */
+  transform: rotate(180deg); /* 折叠后竖条移到右侧，点击展开 */
 }
 .list-title {
   cursor: pointer;
@@ -4886,5 +5067,60 @@ watch(currentUser, async (newUser, oldUser) => {
 .ctx-menu-item:hover {
   background: var(--bg-tertiary, #2a2a3e);
   color: var(--accent-color, #f59e0b);
+}
+
+/* 删除协议确认弹窗：小尺寸 + 警示图标 + 文案一行排布 */
+.modal-dialog.delete-dialog {
+  width: 380px;
+  max-width: 90vw;
+}
+.delete-dialog .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 10px;
+}
+.delete-dialog .modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.delete-dialog .modal-close {
+  background: none;
+  border: none;
+  color: var(--text-tertiary, #6b7280);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.delete-dialog .modal-close:hover {
+  color: var(--accent-color, #f59e0b);
+  background: var(--bg-tertiary, #2a2a3e);
+}
+.delete-confirm-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 20px 18px;
+}
+.delete-confirm-body p {
+  margin: 0;
+  line-height: 1.6;
+  word-break: break-all;
+}
+.delete-warn-icon {
+  color: var(--accent-red);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.delete-dialog .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-color, #2a2a3e);
 }
 </style>

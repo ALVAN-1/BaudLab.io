@@ -1631,6 +1631,52 @@ ipcMain.handle('export:saveFile', async (event, { defaultFileName, format, conte
   }
 });
 
+/* 查看日志保存目录：<数据目录>/logs（串口日志导出的默认位置），不存在则创建。
+ * 用户可在系统设置中自定义导出目录（持久化到 <数据目录>/log-export.json） */
+const logExportConfigPath = path.join(dataDir, 'log-export.json');
+
+function readLogExportDir() {
+  try {
+    if (fs.existsSync(logExportConfigPath)) {
+      const cfg = JSON.parse(fs.readFileSync(logExportConfigPath, 'utf-8')) || {};
+      const dir = String(cfg.dir || '').trim();
+      if (dir && fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return dir;
+    }
+  } catch { /* 配置损坏时回退默认目录 */ }
+  return '';
+}
+
+ipcMain.handle('log:get-save-dir', async () => {
+  try {
+    const custom = readLogExportDir();
+    const dir = custom || path.join(dataDir, 'logs');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    return { success: true, path: dir, custom: !!custom };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+/* 选择日志导出目录：原生目录选择对话框，选中后持久化 */
+ipcMain.handle('log:choose-save-dir', async () => {
+  try {
+    const current = readLogExportDir() || path.join(dataDir, 'logs');
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: '选择日志导出目录',
+      defaultPath: current,
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (canceled || !filePaths || !filePaths[0]) {
+      return { success: false, canceled: true };
+    }
+    const dir = filePaths[0];
+    fs.writeFileSync(logExportConfigPath, JSON.stringify({ dir }, null, 2));
+    return { success: true, path: dir };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 /* 导入协议：原生打开文件对话框（限 JSON）→ 读取文件内容返回给渲染进程 */
 ipcMain.handle('import:openFile', async () => {
   try {

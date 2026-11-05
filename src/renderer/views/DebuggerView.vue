@@ -35,7 +35,7 @@
           v-for="session in sessions"
           :key="session.id"
           class="subwindow"
-          :class="{ 'collapsed-left': session.leftCollapsed }"
+          :class="{ 'collapsed-left': session.leftCollapsed, 'fullscreen': session.fullscreen }"
         >
           <!-- 子窗口头 -->
           <div class="subwindow-header">
@@ -53,13 +53,6 @@
             </div>
             <div class="subwindow-tools">
               <button
-                class="subwindow-tool btn-toggle-left"
-                title="收起/展开左侧栏"
-                @click="session.leftCollapsed = !session.leftCollapsed"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17l-5-5 5-5M19 17l-5-5 5-5"/></svg>
-              </button>
-              <button
                 class="subwindow-tool btn-clear-sublog"
                 title="清空日志"
                 @click="clearSessionLog(session)"
@@ -76,23 +69,28 @@
 
           <!-- 子窗口体 -->
           <div class="subwindow-body">
-            <!-- 左侧参数区 -->
+            <!-- 左侧参数区：收起时变为窄轨，仅保留展开按钮 -->
             <div class="subwindow-left" :class="{ collapsed: session.leftCollapsed }">
-              <!-- Panel: 端口参数 -->
-              <div class="panel collapsible" :class="{ collapsed: session.panel1Collapsed }">
-                <div
-                  class="panel-header"
-                  data-collapse
-                  @click="session.panel1Collapsed = !session.panel1Collapsed"
-                >
+              <button
+                v-if="session.leftCollapsed"
+                class="subwindow-tool btn-toggle-left rail-expand"
+                title="展开参数栏"
+                type="button"
+                @click="session.leftCollapsed = false"
+              >
+                <svg width="15" height="15" fill="none"><use href="#i-collapse-left"/></svg>
+              </button>
+              <!-- Panel: 端口参数（标题栏右侧的 « 按钮收起/展开整个左侧参数栏） -->
+              <div class="panel">
+                <div class="panel-header">
                   <h3>端口参数</h3>
                   <button
-                    class="panel-toggle"
-                    title="收起/展开"
+                    class="subwindow-tool btn-toggle-left panel-sidebar-toggle"
+                    :title="session.leftCollapsed ? '展开参数栏' : '收起参数栏'"
                     type="button"
-                    @click.stop="session.panel1Collapsed = !session.panel1Collapsed"
+                    @click="session.leftCollapsed = !session.leftCollapsed"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                    <svg width="15" height="15" fill="none"><use href="#i-collapse-left"/></svg>
                   </button>
                 </div>
                 <div class="panel-body">
@@ -155,22 +153,10 @@
                 </div>
               </div>
 
-              <!-- Panel: 当前协议 -->
-              <div class="panel collapsible" :class="{ collapsed: session.panel2Collapsed }">
-                <div
-                  class="panel-header"
-                  data-collapse
-                  @click="session.panel2Collapsed = !session.panel2Collapsed"
-                >
+              <!-- Panel: 当前协议（不再单独折叠，随左侧参数栏整体收起） -->
+              <div class="panel">
+                <div class="panel-header">
                   <h3>当前协议</h3>
-                  <button
-                    class="panel-toggle"
-                    title="收起/展开"
-                    type="button"
-                    @click.stop="session.panel2Collapsed = !session.panel2Collapsed"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
                 </div>
                 <div class="panel-body">
                   <div class="form-row">
@@ -304,8 +290,12 @@
                 </div>
               </div>
 
-              <!-- Panel: 通信日志 -->
-              <div class="panel subwindow-terminal">
+              <!-- Panel: 通信日志（fullscreen 时原位铺满调试页内容区；右键弹出日志菜单） -->
+              <div
+                class="panel subwindow-terminal"
+                :class="{ fullscreen: session.fullscreen }"
+                @contextmenu.prevent="openTermMenu($event, session)"
+              >
                 <div class="panel-header">
                   <h3>通信日志</h3>
                   <div class="terminal-tools">
@@ -334,12 +324,35 @@
                       <input type="checkbox" class="auto-scroll" v-model="session.autoScroll">
                       <span>自动滚动</span>
                     </label>
-                    <button class="tool-btn fullscreen-btn" title="放大查看日志" @click="openFullscreenLog(session)">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3"/></svg>
+                    <button
+                      class="tool-btn fullscreen-btn"
+                      :title="session.fullscreen ? '还原窗口' : '放大至应用内全屏'"
+                      @click="toggleSessionFullscreen(session)"
+                    >
+                      <svg v-if="!session.fullscreen" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3"/></svg>
+                      <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 01-2 2H3M21 8h-3a2 2 0 01-2-2V3M3 16h3a2 2 0 012 2v3M16 21v-3a2 2 0 012-2h3"/></svg>
                     </button>
                   </div>
                 </div>
                 <div class="terminal" :ref="el => setTerminalRef(el, session.id)">
+                  <!-- TEXT 终端模式：连续文本流 + 行内输入（回车直接发送） -->
+                  <div
+                    v-if="session.logMode === 'text'"
+                    class="text-stream-wrap"
+                    @click="focusTextInput(session, $event)"
+                  >
+                    <span class="text-stream" v-html="textStreamHtml(session)"></span><input
+                      class="text-inline-input"
+                      :class="{ invalid: !!sendInputError(session) }"
+                      :style="{ width: textInputWidth(session.sendInput) }"
+                      v-model="session.sendInput"
+                      :ref="el => setTextInputRef(el, session.id)"
+                      spellcheck="false"
+                      autocomplete="off"
+                      @keydown.enter.prevent="textSend(session)"
+                    ><span class="text-caret" aria-hidden="true"></span>
+                  </div>
+                  <template v-else>
                   <div
                     v-for="(line, i) in session.terminalLines"
                     :key="i"
@@ -366,6 +379,7 @@
                       <span class="line-desc" v-if="line.desc">{{ line.desc }}</span>
                     </div>
                   </div>
+                  </template>
                 </div>
               </div>
 
@@ -463,74 +477,33 @@
       <FileSendView v-show="activeTab === 'file'" />
     </Transition>
 
-    <!-- 通信日志全屏遮罩 -->
-    <Transition name="modal-fade">
-      <div v-if="fullscreenLogSession" class="log-fullscreen-overlay" @click.self="closeFullscreenLog">
-        <div class="log-fullscreen-container">
-          <div class="panel-header">
-            <h3>通信日志 — {{ fullscreenLogSession.port || '会话' }}</h3>
-            <div class="terminal-tools">
-              <button
-                class="tool-btn"
-                :class="{ active: fullscreenLogSession.logMode === 'hex' }"
-                @click="setLogMode(fullscreenLogSession, 'hex')"
-              >HEX</button>
-              <button
-                class="tool-btn"
-                :class="{ active: fullscreenLogSession.logMode === 'ascii' }"
-                @click="setLogMode(fullscreenLogSession, 'ascii')"
-              >ASCII</button>
-              <button
-                class="tool-btn"
-                :class="{ active: fullscreenLogSession.logMode === 'text' }"
-                title="终端文本模式：按行显示，支持 ANSI 颜色"
-                @click="setLogMode(fullscreenLogSession, 'text')"
-              >TEXT</button>
-              <button
-                class="tool-btn"
-                :class="{ active: fullscreenLogSession.parseEnabled }"
-                @click="toggleParse(fullscreenLogSession)"
-              >解析</button>
-              <label class="checkbox">
-                <input type="checkbox" class="auto-scroll" v-model="fullscreenLogSession.autoScroll">
-                <span>自动滚动</span>
-              </label>
-              <button class="tool-btn" title="关闭全屏" @click="closeFullscreenLog">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 01-2 2H3M21 8h-3a2 2 0 01-2-2V3M3 16h3a2 2 0 012 2v3M16 21v-3a2 2 0 012-2h3"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="terminal log-fullscreen-terminal" :ref="el => setFullscreenTerminalRef(el)">
-            <div
-              v-for="(line, i) in fullscreenLogSession.terminalLines"
-              :key="i"
-              class="terminal-line"
-              :class="[line.dir, line.type || '']"
-              v-show="isLineVisible(fullscreenLogSession, line)"
-            >
-              <div class="line-row">
-                <span class="line-time">{{ line.time }}</span>
-                <span class="line-dir">{{ formatTerminalDir(line) }}</span>
-                <span
-                  v-if="line.kind === 'text'"
-                  class="line-data text-mode"
-                  v-html="renderAnsi(line.data)"
-                ></span>
-                <span
-                  v-else
-                  class="line-data"
-                  :class="{ 'frame-hover': fullscreenLogSession.parseEnabled && (line.dir === 'tx' || line.dir === 'rx') }"
-                  @mouseenter="fullscreenLogSession.parseEnabled && (line.dir === 'tx' || line.dir === 'rx') && showSegCard($event, buildFrameParse(fullscreenLogSession, line))"
-                  @mousemove="moveSegCard"
-                  @mouseleave="hideSegCard"
-                >{{ formatTerminalData(line, fullscreenLogSession.logMode === 'text' ? 'ascii' : fullscreenLogSession.logMode) }}</span>
-                <span class="line-desc" v-if="line.desc">{{ line.desc }}</span>
-              </div>
-            </div>
-          </div>
+    <!-- 终端右键菜单：查看日志路径 / 导出日志 -->
+    <Teleport to="body">
+      <div
+        v-if="termMenu.visible"
+        class="term-ctx-menu"
+        :style="{ left: termMenu.x + 'px', top: termMenu.y + 'px' }"
+        @click.stop
+      >
+        <div class="term-menu-item" @click="viewLogSavePath">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          <span>查看日志保存路径</span>
+        </div>
+        <div class="term-menu-item" @click="exportSessionLog">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
+          <span>导出日志 (.log)</span>
         </div>
       </div>
+    </Teleport>
+
+    <!-- 通用 Toast 提示 -->
+    <Transition name="toast-slide">
+      <div v-if="toast.show" class="save-toast" :class="toast.type">
+        <span class="toast-icon">{{ toast.type === 'success' ? '✓' : (toast.type === 'info' ? 'ℹ' : '✕') }}</span>
+        <span class="toast-text">{{ toast.message }}</span>
+      </div>
     </Transition>
+
   </div>
 </template>
 
@@ -587,13 +560,13 @@ function createSession(opts = {}) {
     selectedCmd: 0x01,
     sendMode: 'HEX',
     sendInput: '',
+    textPending: '',
     newlineMode: 'crlf',
     autoScroll: true,
     logMode: 'hex',
     parseEnabled: false,
     leftCollapsed: false,
-    panel1Collapsed: false,
-    panel2Collapsed: false,
+    fullscreen: false,
     fieldValues: {},
   });
 }
@@ -614,31 +587,96 @@ function scrollToBottom(sessionId) {
   });
 }
 
-/* ==================== 通信日志全屏 ==================== */
-const fullscreenLogSession = ref(null);
-let fullscreenTerminalEl = null;
+/* ==================== 子窗口应用内全屏 ====================
+ * ⛶ 按钮切换整个子窗口（参数区 + 终端 + 发送栏）覆盖调试页内容区，
+ * 不是只读的日志查看器；Esc 或再次点击还原 */
 
-function setFullscreenTerminalRef(el) {
-  fullscreenTerminalEl = el;
-}
-
-function openFullscreenLog(session) {
-  fullscreenLogSession.value = session;
-  nextTick(() => {
-    if (fullscreenTerminalEl) {
-      fullscreenTerminalEl.scrollTop = fullscreenTerminalEl.scrollHeight;
-    }
-  });
-}
-
-function closeFullscreenLog() {
-  fullscreenLogSession.value = null;
-  fullscreenTerminalEl = null;
+function toggleSessionFullscreen(session) {
+  session.fullscreen = !session.fullscreen;
 }
 
 function onFullscreenKeydown(e) {
-  if (e.key === 'Escape' && fullscreenLogSession.value) {
-    closeFullscreenLog();
+  if (e.key === 'Escape') {
+    sessions.value.forEach(s => { s.fullscreen = false; });
+  }
+}
+
+/* ==================== 终端右键菜单：日志路径 / 导出 ==================== */
+
+const termMenu = reactive({ visible: false, x: 0, y: 0, session: null });
+
+function openTermMenu(e, session) {
+  termMenu.visible = true;
+  termMenu.x = e.clientX;
+  termMenu.y = e.clientY;
+  termMenu.session = session;
+  setTimeout(() => document.addEventListener('click', closeTermMenu, { once: true }), 0);
+}
+
+function closeTermMenu() {
+  termMenu.visible = false;
+  termMenu.session = null;
+}
+
+/* 通用 Toast 提示（复用全局 .save-toast 样式） */
+const toast = reactive({ show: false, message: '', type: 'success', timer: null });
+
+function showToast(message, type = 'success', duration = 2500) {
+  if (toast.timer) clearTimeout(toast.timer);
+  toast.message = message;
+  toast.type = type;
+  toast.show = true;
+  toast.timer = setTimeout(() => { toast.show = false; }, duration);
+}
+
+/* 查看日志保存目录：<数据目录>/logs（串口日志导出的默认位置） */
+async function viewLogSavePath() {
+  const session = termMenu.session;
+  closeTermMenu();
+  if (!hasElectron) return;
+  try {
+    const r = await window.electronAPI.log.getSaveDir();
+    if (r && r.success) showToast(`日志目录：${r.path}`, 'success', 6000);
+    else showToast(r?.error || '获取日志目录失败', 'error');
+  } catch (err) {
+    showToast(`获取日志目录失败: ${err.message}`, 'error');
+  }
+}
+
+/* 导出当前会话日志为 .log 文本（原生保存对话框） */
+async function exportSessionLog() {
+  const session = termMenu.session;
+  closeTermMenu();
+  if (!session || !session.terminalLines.length) {
+    showToast('日志为空，无可导出内容', 'error');
+    return;
+  }
+  const ts = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const header = [
+    '# BaudLab 串口通信日志',
+    `# 端口: ${session.port || 'None'}  波特率: ${session.baud}`,
+    `# 导出时间: ${ts.toLocaleString('zh-CN', { hour12: false })}`,
+    `# 共 ${session.terminalLines.length} 条记录`,
+    '',
+  ].join('\n');
+  const body = session.terminalLines.map(l => {
+    const dir = l.dir === 'tx' ? 'TX' : (l.dir === 'rx' ? 'RX' : '--');
+    const text = l.kind === 'text' ? l.data : formatTerminalData(l, 'ascii');
+    const desc = l.desc ? `  <${l.desc}>` : '';
+    return `[${l.time}] [${dir}] ${text}${desc}`;
+  }).join('\n') + '\n';
+  const fname = `baudlab-${String(session.port || 'none').replace(/[^\w-]/g, '')}-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.log`;
+  try {
+    const r = await window.electronAPI.export.saveFile({
+      defaultFileName: fname,
+      format: 'log',
+      content: header + '\n' + body,
+    });
+    if (r && r.success) showToast(`日志已导出：${r.filePath}`, 'success', 4000);
+    else if (r && !r.canceled) showToast(`导出失败：${r.error || '未知错误'}`, 'error');
+  } catch (err) {
+    showToast(`导出失败: ${err.message}`, 'error');
   }
 }
 
@@ -1141,6 +1179,9 @@ function pushTextChunk(session, hexStr) {
   const parts = t.buf.split(/\r\n|\n|\r/);
   t.buf = parts.pop() || '';
   for (const l of parts) pushTextLine(session, l);
+  /* 未完结行缓冲镜像到 session（响应式）：TEXT 流式渲染需要实时显示提示符半行 */
+  session.textPending = t.buf;
+  if (session.autoScroll) scrollToBottom(session.id);
 }
 
 /**
@@ -1152,6 +1193,7 @@ function flushTextBuffer(session) {
     pushTextLine(session, t.buf);
     t.buf = '';
   }
+  session.textPending = '';
 }
 
 /**
@@ -1161,6 +1203,100 @@ function setLogMode(session, mode) {
   if (session.logMode === mode) return;
   if (session.logMode === 'text') flushTextBuffer(session);
   session.logMode = mode;
+  /* TEXT 模式即文本终端：行内输入回车直接以 ASCII 发送 */
+  if (mode === 'text') session.sendMode = 'ASCII';
+}
+
+/* ==================== TEXT 流式渲染 + 行内输入 ==================== */
+
+/**
+ * hex 字节序列 → 终端流文本：\r\n 保留为真实换行，可打印字符原样，其余跳过
+ */
+function hexToStreamText(hexStr) {
+  return (hexStr || '').trim().split(/\s+/).filter(Boolean).map(b => {
+    const c = parseInt(b, 16);
+    if (isNaN(c)) return '';
+    if (c === 0x0D) return '\r';
+    if (c === 0x0A) return '\n';
+    return (c >= 0x20 && c <= 0x7E) ? String.fromCharCode(c) : '';
+  }).join('');
+}
+
+/**
+ * TEXT 模式整段流式 HTML：RX 文本（保留 ANSI 颜色）+ TX 回显 + INFO/ERR，
+ * 结尾拼接未完结缓冲（如设备提示符 "SK_MOTOR ==> "），行内输入紧随其后
+ */
+function textStreamHtml(session) {
+  let html = '';
+  for (const line of session.terminalLines) {
+    if (!isLineVisible(session, line)) continue;
+    if (line.kind === 'text') {
+      html += renderAnsi(line.data) + '\n';
+    } else if (line.dir === 'tx') {
+      /* TX 回显自带换行后缀（按换行模式），不再额外加 \n */
+      html += `<span class="stream-tx">${escapeHtml(hexToStreamText(line.data))}</span>`;
+    } else if (line.type === 'info' || line.type === 'err') {
+      html += `<span class="stream-${line.type}">${escapeHtml(line.data)}</span>\n`;
+    }
+  }
+  html += session.textPending ? renderAnsi(session.textPending) : '';
+  return html;
+}
+
+/* 行内输入框：按内容宽度自适应（ASCII 1ch，全角字符约 2ch），真光标隐藏由块状光标代替 */
+function textInputWidth(s) {
+  let units = 0;
+  for (const ch of String(s || '')) units += ch.charCodeAt(0) > 0xFF ? 2 : 1;
+  return `calc(${units}ch + 2px)`;
+}
+
+const textInputRefs = {};
+function setTextInputRef(el, sessionId) {
+  if (el) textInputRefs[sessionId] = el;
+  else delete textInputRefs[sessionId];
+}
+
+function focusTextInput(session, e) {
+  /* 已有选中文本（用户在复制）时不抢焦点 */
+  if (e && String(window.getSelection ? window.getSelection() : '')) return;
+  const el = textInputRefs[session.id];
+  if (el) el.focus({ preventScroll: true });
+}
+
+/* 行内回车发送：发送后清空输入，光标回到提示符末尾。
+ * 空输入回车：仅发送换行后缀（真终端的裸回车语义）；换行模式为"无"时不发送 */
+async function textSend(session) {
+  if (!session.sendInput.trim()) {
+    const nl = getNewlineHex(session);
+    if (!nl || !session.open) return;
+    const result = await sendPort({ portPath: session.port, data: nl, format: 'hex' });
+    if (result.success) {
+      session.tx++;
+      session.terminalLines.push({
+        time: formatTime(new Date()),
+        dir: 'tx',
+        type: '',
+        data: nl,
+        desc: '',
+      });
+      capLines(session);
+      scrollToBottom(session.id);
+    } else {
+      session.err++;
+      session.terminalLines.push({
+        time: formatTime(new Date()),
+        dir: '',
+        type: 'err',
+        data: `[ERR] 发送失败: ${result.error}`,
+        desc: '',
+      });
+      capLines(session);
+      scrollToBottom(session.id);
+    }
+    return;
+  }
+  sendData(session);
+  session.sendInput = '';
 }
 
 /**
@@ -1975,12 +2111,9 @@ onMounted(() => {
     });
     capLines(session);
     if (session.autoScroll) scrollToBottom(session.id);
-    if (fullscreenLogSession.value === session && fullscreenTerminalEl) {
-      nextTick(() => { fullscreenTerminalEl.scrollTop = fullscreenTerminalEl.scrollHeight; });
-    }
   });
 
-  // Esc 关闭全屏日志
+  // Esc 还原子窗口全屏
   window.addEventListener('keydown', onFullscreenKeydown);
 
   // 错误回调：递增错误计数，标记断开
@@ -2102,6 +2235,7 @@ function clearSessionLog(session) {
 function clearAllLogs() {
   sessions.value.forEach(s => {
     s.terminalLines = [];
+    s.textPending = '';
     textTerminals.delete(s.id);
   });
 }

@@ -87,7 +87,8 @@
         </div>
       </aside>
 
-      <!-- 右侧画布（视口 + 可平移内层） -->
+      <!-- 右侧画布（视口 + 可平移内层）；外面包一层 stage 用于承载空态覆盖层 -->
+      <div class="board-stage">
       <div
         ref="viewportRef"
         class="board-viewport"
@@ -152,15 +153,6 @@
               marker-end="url(#arrowhead)"
             />
           </svg>
-
-          <div v-if="placedCards.length === 0" class="canvas-empty">
-            <div class="canvas-empty-icon">
-              <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-board-card"/></svg>
-            </div>
-            <p>从左侧拖拽组件到此处</p>
-            <span>放置后可拖动位置、调整大小、绑定信号</span>
-            <span class="canvas-empty-tip">💡 拖动画布空白处可平移视图 · 拖拽卡片右侧圆点可连线</span>
-          </div>
 
           <div
             v-for="card in placedCards"
@@ -260,6 +252,17 @@
             <div class="resize-handle" @mousedown.stop="startResize($event, card)"></div>
           </div>
         </div>
+      </div>
+
+      <!-- 空态提示覆盖层：挂在视口层而非可平移画布内，无论怎么平移/滚动都居中于可视区域 -->
+      <div v-if="placedCards.length === 0" class="canvas-empty">
+        <div class="canvas-empty-icon">
+          <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-board-card"/></svg>
+        </div>
+        <p>从左侧拖拽组件到此处</p>
+        <span>放置后可拖动位置、调整大小、绑定信号</span>
+        <span class="canvas-empty-tip">💡 拖动画布空白处可平移视图 · 拖拽卡片右侧圆点可连线</span>
+      </div>
       </div>
     </div>
 
@@ -1747,20 +1750,23 @@ onUnmounted(() => {
   user-select: none;
 }
 
+/* 视口包装层：承载空态覆盖层，覆盖层相对它定位，不受画布平移/滚动影响 */
+.board-stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
 .canvas-empty {
   position: absolute;
   inset: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  /* 居中显示在视口范围内，不随滚动偏移太远 */
-  position: sticky;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 0;
-  overflow: visible;
 }
 .canvas-empty-icon { color: var(--text-secondary); margin-bottom: 12px; opacity: 0.4; line-height: 0; }
 .canvas-empty p { font-size: 15px; color: var(--text-secondary); font-weight: 500; margin: 0; }

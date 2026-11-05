@@ -114,6 +114,16 @@ function loadSessions() {
       }
     }
   } catch { /* 历史损坏视为无历史 */ }
+  /* 兜底收尾：上次退出时若正处于流式中途（崩溃/强关/断网），占位消息会带着
+   * streaming:true 落盘，重新加载后会永远卡在"思考中"——统一置为已结束 */
+  for (const c of conversations.value) {
+    for (const m of c.messages || []) {
+      if (m && m.streaming) {
+        m.streaming = false;
+        if (!m.content && !m.errorText) m.content = '(回复中断，请重新提问)';
+      }
+    }
+  }
   if (!conversations.value.length) createConversation({ silent: true });
   if (!activeConversation()) activeId.value = conversations.value[0].id;
 }
@@ -249,7 +259,7 @@ async function send(text, { contextText, attachments } = {}) {
      * 主进程检测到首条为 system 时不再重复注入配置的系统提示词） */
     const payload = buildApiMessages();
     if (contextText) {
-      const persona = config.value.systemPrompt || '你是串口协议管理工具内置的 AI 助手。回答使用简体中文，禁止使用 emoji 表情符号。';
+      const persona = config.value.systemPrompt || '你是串口协议管理工具内置的 AI 助手。回答使用简体中文，禁止使用 emoji 表情符号。排版要求：不同主题分成独立小节，小节标题单独占一行；列举项用 "- " 列表，每项独占一行；对比信息用表格；不要把多个主题挤在同一段落里。';
       payload.unshift({ role: 'system', content: `${persona}\n\n# 工具实时上下文（自动生成，回答时以此为准）\n${contextText}` });
     }
     const r = await api().send({ requestId: currentRequestId, messages: payload, model: conv.model || undefined });
@@ -300,7 +310,18 @@ async function generateJson(desc, systemPrompt) {
 
 async function stop() {
   if (!streaming.value) return;
-  try { await api()?.abort(); } catch { /* 主进程 ai:done 兜底收尾 */ }
+  /* 先本地收尾再通知主进程：若主进程已无对应请求（如中途异常退出），
+   * ai:done 不会回来，界面不能一直卡在"思考中"。此处收尾后，主进程
+   * 迟到的 ai:done(ai:chunk) 因 streamingConvId 已清空而自动失效 */
+  const m = streamingTarget();
+  streaming.value = false;
+  streamingConvId = '';
+  if (m && m.role === 'assistant' && m.streaming) {
+    m.streaming = false;
+    if (!m.content) m.content = '(已停止)';
+  }
+  persist();
+  try { await api()?.abort(); } catch { /* 本地已收尾，无需兜底 */ }
 }
 
 /* ---------------- 事件（模块级只挂一次） ---------------- */

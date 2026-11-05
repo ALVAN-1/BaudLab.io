@@ -42,6 +42,16 @@
             <span class="theme-switch-thumb"></span>
           </button>
         </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">日志导出路径</span>
+            <span class="setting-desc">串口调试日志导出 .log 文件的默认保存目录</span>
+          </div>
+          <div class="log-dir-control">
+            <span class="log-dir-path" :title="logExportDir">{{ logExportDir || '默认（数据目录下的 logs）' }}</span>
+            <button class="btn btn-secondary btn-small" @click="chooseLogDir">浏览…</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -567,6 +577,13 @@ onMounted(async () => {
     try { mcpInfo.value = await window.electronAPI.app.getMcpInfo(); } catch { /* ignore */ }
   }
   refreshMcpPolicies();
+  // 日志导出目录（主进程返回自定义目录或默认 <数据目录>/logs）
+  if (window.electronAPI?.log?.getSaveDir) {
+    try {
+      const r = await window.electronAPI.log.getSaveDir();
+      if (r?.success) logExportDir.value = r.path;
+    } catch { /* ignore */ }
+  }
   // GitHub token：迁移旧 localStorage 令牌到主进程并刷新状态
   await ensureMigrated();
   // AI 助手配置
@@ -604,6 +621,17 @@ function toggleUpdateNotify() {
   if (window.electronAPI?.app?.setUpdateNotify) {
     window.electronAPI.app.setUpdateNotify(updateNotify.value);
   }
+}
+
+/* 日志导出目录：浏览选择（主进程持久化到 log-export.json） */
+const logExportDir = ref('');
+
+async function chooseLogDir() {
+  if (!window.electronAPI?.log?.chooseSaveDir) return;
+  try {
+    const r = await window.electronAPI.log.chooseSaveDir();
+    if (r?.success) logExportDir.value = r.path;
+  } catch { /* ignore */ }
 }
 
 async function saveGithubToken() {
@@ -820,4 +848,15 @@ function openGithub() {
 .mcp-policy-row { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
 .mcp-policy-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .mcp-policy-reset-all { font-size: 12px; padding: 3px 10px; }
+
+/* 日志导出目录配置行 */
+.log-dir-control { display: flex; align-items: center; gap: 10px; max-width: 60%; }
+.log-dir-path {
+  font-size: 12px; font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+  max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  direction: rtl; /* 长路径截头留尾：末段（目录名）始终可见 */
+  text-align: left;
+}
+
 </style>
