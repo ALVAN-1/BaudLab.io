@@ -10,10 +10,12 @@
         <div class="form-row inline">
           <div>
             <label>目标串口</label>
-            <select class="input" v-model="selectedPort" :disabled="sending">
-              <option value="">— 选择串口 —</option>
-              <option v-for="p in portList" :key="p" :value="p">{{ p }}</option>
-            </select>
+            <AppSelect
+              v-model="selectedPort"
+              :disabled="sending"
+              placeholder="— 选择串口 —"
+              :options="[{ value: '', label: '— 选择串口 —' }, ...portList.map(p => ({ value: p, label: p }))]"
+            />
           </div>
           <div>
             <label>执行模式</label>
@@ -228,6 +230,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount, watch } from 'vue';
 import { useSerial } from '../composables/useSerial';
+import AppSelect from '../components/AppSelect.vue';
 
 const { availablePorts, hasElectron, refreshPorts, sendPort } = useSerial();
 

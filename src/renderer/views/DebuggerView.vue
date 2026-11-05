@@ -96,23 +96,31 @@
                 <div class="panel-body">
                   <div class="form-row">
                     <label>串口号</label>
-                    <select class="input port-select" v-model="session.port">
-                      <option v-if="availablePorts.length === 0" value="" disabled>未检测到串口</option>
-                      <option v-for="p in availablePorts" :key="p" :value="p">{{ p }}</option>
-                    </select>
+                    <AppSelect
+                      v-model="session.port"
+                      :placeholder="availablePorts.length === 0 ? '未检测到串口' : '请选择串口'"
+                      :options="availablePorts.length === 0
+                        ? [{ value: '', label: '未检测到串口', disabled: true }]
+                        : availablePorts.map(p => ({ value: p, label: p }))"
+                    />
                   </div>
                   <div class="form-row">
                     <label>波特率</label>
                     <div class="baud-wrapper">
-                      <select class="input baud-select" v-model="session.baudSelect" @change="onBaudChange(session)">
-                        <option value="9600">9600</option>
-                        <option value="19200">19200</option>
-                        <option value="38400">38400</option>
-                        <option value="57600">57600</option>
-                        <option value="115200">115200</option>
-                        <option value="921600">921600</option>
-                        <option value="custom">自定义</option>
-                      </select>
+                      <AppSelect
+                        class="baud-select"
+                        v-model="session.baudSelect"
+                        :options="[
+                          { value: '9600', label: '9600' },
+                          { value: '19200', label: '19200' },
+                          { value: '38400', label: '38400' },
+                          { value: '57600', label: '57600' },
+                          { value: '115200', label: '115200' },
+                          { value: '921600', label: '921600' },
+                          { value: 'custom', label: '自定义' },
+                        ]"
+                        @change="onBaudChange(session)"
+                      />
                       <input
                         v-if="session.baudSelect === 'custom'"
                         type="number"
@@ -125,25 +133,15 @@
                   <div class="form-row inline">
                     <div>
                       <label>数据位</label>
-                      <select class="input small" v-model="session.dataBits">
-                        <option :value="8">8</option>
-                        <option :value="7">7</option>
-                      </select>
+                      <AppSelect class="small" v-model="session.dataBits" :options="[{ value: 8, label: '8' }, { value: 7, label: '7' }]" />
                     </div>
                     <div>
                       <label>校验</label>
-                      <select class="input small" v-model="session.parity">
-                        <option value="none">None</option>
-                        <option value="even">Even</option>
-                        <option value="odd">Odd</option>
-                      </select>
+                      <AppSelect class="small" v-model="session.parity" :options="[{ value: 'none', label: 'None' }, { value: 'even', label: 'Even' }, { value: 'odd', label: 'Odd' }]" />
                     </div>
                     <div>
                       <label>停止位</label>
-                      <select class="input small" v-model="session.stopBits">
-                        <option :value="1">1</option>
-                        <option :value="2">2</option>
-                      </select>
+                      <AppSelect class="small" v-model="session.stopBits" :options="[{ value: 1, label: '1' }, { value: 2, label: '2' }]" />
                     </div>
                   </div>
                   <button
@@ -161,9 +159,12 @@
                 <div class="panel-body">
                   <div class="form-row">
                     <label>选择协议</label>
-                    <select class="input protocol-select" v-model="session.selectedProtocol" @change="onProtocolChange(session)">
-                      <option v-for="name in dbProtocolNames" :key="name" :value="name">{{ name }}</option>
-                    </select>
+                    <AppSelect
+                      v-model="session.selectedProtocol"
+                      placeholder="— 选择协议 —"
+                      :options="dbProtocolNames.map(name => ({ value: name, label: name }))"
+                      @change="onProtocolChange(session)"
+                    />
                   </div>
                   <div class="protocol-meta" v-if="session.selectedProtocol">
                     <div class="meta-row"><span>版本</span><code>{{ dbProtocolMeta[session.selectedProtocol]?.version || '-' }}</code></div>
@@ -179,13 +180,12 @@
               <div class="panel frame-builder-panel">
                 <div class="panel-header">
                   <h3>发送帧配置</h3>
-                  <select class="input cmd-select" v-model="session.selectedCmd" @change="onCmdChange(session)">
-                    <option
-                      v-for="cmd in getProtocol(session)?.cmds || []"
-                      :key="cmd.cmd"
-                      :value="cmd.cmd"
-                    >0x{{ cmdCodeHex(session, cmd) }} — {{ cmd.name }}</option>
-                  </select>
+                  <AppSelect
+                    class="cmd-select"
+                    v-model="session.selectedCmd"
+                    :options="(getProtocol(session)?.cmds || []).map(cmd => ({ value: cmd.cmd, label: `0x${cmdCodeHex(session, cmd)} — ${cmd.name}` }))"
+                    @change="onCmdChange(session)"
+                  />
                 </div>
                 <div class="panel-body">
                   <div class="frame-fields" v-if="getCurrentCmd(session)?.fields?.length > 0">
@@ -219,17 +219,11 @@
                         <div class="field-header">
                           <span class="field-name">{{ field.name }}</span>
                         </div>
-                        <select
-                          class="input enum-select"
-                          :value="getEnumValue(session, fi)"
-                          @change="setEnumValue(session, fi, $event)"
-                        >
-                          <option
-                            v-for="opt in field.options"
-                            :key="opt.value"
-                            :value="opt.value"
-                          >0x{{ opt.value.toString(16).padStart(2, '0').toUpperCase() }} — {{ opt.label }}</option>
-                        </select>
+                        <AppSelect
+                          :model-value="getEnumValue(session, fi)"
+                          :options="(field.options || []).map(opt => ({ value: opt.value, label: `0x${opt.value.toString(16).padStart(2, '0').toUpperCase()} — ${opt.label}` }))"
+                          @update:model-value="v => setEnumValue(session, fi, v)"
+                        />
                       </div>
 
                       <!-- 数值字段 -->
@@ -385,10 +379,7 @@
 
               <!-- Terminal input -->
               <div class="terminal-input">
-                <select class="input send-mode" v-model="session.sendMode">
-                  <option value="HEX">HEX</option>
-                  <option value="ASCII">ASCII</option>
-                </select>
+                <AppSelect class="send-mode" v-model="session.sendMode" :options="[{ value: 'HEX', label: 'HEX' }, { value: 'ASCII', label: 'ASCII' }]" />
                 <input
                   type="text"
                   class="input send-input"
@@ -399,12 +390,16 @@
                   @keydown.enter="sendData(session)"
                 >
                 <div class="newline-wrapper">
-                  <select class="input newline-select" v-model="session.newlineMode">
-                    <option value="none">无换行</option>
-                    <option value="cr">\r</option>
-                    <option value="lf">\n</option>
-                    <option value="crlf">\r\n</option>
-                  </select>
+                  <AppSelect
+                    class="newline-select"
+                    v-model="session.newlineMode"
+                    :options="[
+                      { value: 'none', label: '无换行' },
+                      { value: 'cr', label: '\\r' },
+                      { value: 'lf', label: '\\n' },
+                      { value: 'crlf', label: '\\r\\n' },
+                    ]"
+                  />
                 </div>
                 <button
                   class="btn btn-primary btn-send"
@@ -514,6 +509,7 @@ import { useLogSettings } from '../composables/useLogSettings';
 import { protocolDefinitions, crc16, sumCheck, formatTime, getByteLabel } from '../data/protocolDefinitions';
 import ListSendView from './ListSendView.vue';
 import FileSendView from './FileSendView.vue';
+import AppSelect from '../components/AppSelect.vue';
 
 const activeTab = ref('debug');
 
@@ -885,9 +881,9 @@ function getEnumValue(session, fieldIndex) {
   return session.fieldValues[key] || 0;
 }
 
-function setEnumValue(session, fieldIndex, event) {
+function setEnumValue(session, fieldIndex, value) {
   const key = `field_${fieldIndex}`;
-  session.fieldValues[key] = parseInt(event.target.value);
+  session.fieldValues[key] = parseInt(value);
 }
 
 /**

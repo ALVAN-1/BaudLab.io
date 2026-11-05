@@ -31,14 +31,8 @@
         {{ catFilterLabel(cat) }}<span class="filter-count">{{ catCount(cat) }}</span>
       </button>
       <div class="filter-dropdowns">
-        <select class="input filter-select" v-model="senderFilter">
-          <option value="">发送方：全部</option>
-          <option v-for="s in senderOptions" :key="s" :value="s">{{ s }}</option>
-        </select>
-        <select class="input filter-select" v-model="receiverFilter">
-          <option value="">接收方：全部</option>
-          <option v-for="r in receiverOptions" :key="r" :value="r">{{ r }}</option>
-        </select>
+        <AppSelect v-model="senderFilter" :options="[{ value: '', label: '发送方：全部' }, ...senderOptions.map(s => ({ value: s, label: s }))]" />
+        <AppSelect v-model="receiverFilter" :options="[{ value: '', label: '接收方：全部' }, ...receiverOptions.map(r => ({ value: r, label: r }))]" />
       </div>
     </div>
 
@@ -183,6 +177,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue';
+import AppSelect from './AppSelect.vue';
 
 const props = defineProps({
   protocol: { type: Object, default: null },
@@ -358,7 +353,7 @@ const visibleCommands = computed(() => {
   display: inline-block;
   width: 3px;
   height: 14px;
-  background: var(--accent-color, #f59e0b);
+  background: var(--accent);
   border-radius: 2px;
 }
 
@@ -391,7 +386,7 @@ const visibleCommands = computed(() => {
 .master-module-addr {
   font-family: 'Consolas', monospace;
   font-size: 12px;
-  color: var(--accent-color, #f59e0b);
+  color: var(--accent);
   background: var(--bg-secondary);
   padding: 2px 8px;
   border-radius: 3px;
@@ -432,11 +427,11 @@ const visibleCommands = computed(() => {
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.filter-btn:hover { border-color: var(--accent-color, #f59e0b); }
+.filter-btn:hover { border-color: var(--accent); }
 .filter-btn.active {
-  background: var(--accent-color, #f59e0b);
+  background: var(--accent);
   color: #fff;
-  border-color: var(--accent-color, #f59e0b);
+  border-color: var(--accent);
 }
 .filter-count { opacity: 0.7; margin-left: 4px; }
 .filter-dropdowns {
@@ -480,7 +475,7 @@ const visibleCommands = computed(() => {
 .cmd-code {
   font-family: 'Consolas', monospace;
   font-size: 12px;
-  color: var(--accent-color, #f59e0b);
+  color: var(--accent);
   background: var(--bg-secondary);
   padding: 2px 8px;
   border-radius: 3px;
@@ -726,7 +721,7 @@ const visibleCommands = computed(() => {
 
 /* ==================== 白纸模式（PDF 样式内嵌）：固定浅色配色 ==================== */
 .master-plain .master-h2 { color: #1a1a1a; border-bottom-color: #e5e7eb; }
-.master-plain .master-h2::before { background: #f59e0b; }
+.master-plain .master-h2::before { background: #5e6ad2; }
 .master-plain .master-frame-info > div {
   color: #444;
   background: #fafafa;
@@ -734,7 +729,7 @@ const visibleCommands = computed(() => {
 }
 .master-plain .master-module-row { background: #fafafa; border-color: #e5e7eb; }
 .master-plain .master-module-name { color: #1a1a1a; }
-.master-plain .master-module-addr { color: #b45309; background: #fffbeb; }
+.master-plain .master-module-addr { color: #3f4a9e; background: #eef0fa; }
 .master-plain .tag { background: #f3f4f6; color: #6b7280; }
 .master-plain .tag.cat-general  { background: rgba(39, 166, 68, 0.15);  color: #15803d; }
 .master-plain .tag.cat-control  { background: rgba(59, 130, 246, 0.15); color: #1d4ed8; }
@@ -744,13 +739,13 @@ const visibleCommands = computed(() => {
 .master-plain .tag.cat-response { background: rgba(139, 92, 246, 0.15); color: #6d28d9; }
 .master-plain .cmd-table-wrap { border-color: #e5e7eb; background: #fff; }
 .master-plain .cmd-table th {
-  background: #fdf6ec;
-  color: #92400e;
-  border-bottom: 2px solid #fde68a;
+  background: #eef0fa;
+  color: #3f4a9e;
+  border-bottom: 2px solid #c9cff0;
 }
 .master-plain .cmd-table td { color: #1a1a1a; border-bottom-color: #f0f0f0; }
 .master-plain .cmd-table tr:hover td { background: #fafafa; }
-.master-plain .cmd-code { color: #b45309; background: #fffbeb; }
+.master-plain .cmd-code { color: #3f4a9e; background: #eef0fa; }
 .master-plain .cmd-name { color: #1a1a1a; }
 .master-plain .cmd-dir-badge { color: #6d28d9; }
 .master-plain .cmd-sender, .master-plain .cmd-receiver { color: #555; }

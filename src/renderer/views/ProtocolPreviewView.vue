@@ -578,18 +578,18 @@ body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; color: #1a1a1a
 .pv-doc { max-width: 1080px; margin: 0 auto; }
 .pv-title { font-size: 24px; font-weight: 700; }
 .pv-meta { color: #888; font-size: 12px; margin: 4px 0 12px; }
-.pv-desc { font-size: 13px; color: #444; background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+.pv-desc { font-size: 13px; color: #444; background: #eef0fa; border-left: 4px solid #5e6ad2; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
 .pv-h2 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 8px; }
-.pv-h2::before { content: ''; display: inline-block; width: 3px; height: 14px; background: #f59e0b; border-radius: 2px; }
+.pv-h2::before { content: ''; display: inline-block; width: 3px; height: 14px; background: #5e6ad2; border-radius: 2px; }
 .pv-frame-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pv-frame-grid > div { font-size: 12.5px; color: #444; padding: 8px 12px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 6px; }
 .pv-module-row { display: flex; align-items: center; gap: 12px; padding: 6px 12px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 4px; }
 .pv-module-name { font-weight: 600; font-size: 13px; }
-.pv-module-addr { font-family: Consolas, monospace; font-size: 12px; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 3px; }
+.pv-module-addr { font-family: Consolas, monospace; font-size: 12px; color: #3f4a9e; background: #eef0fa; padding: 2px 8px; border-radius: 3px; }
 table.cmd-table { width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid #e5e7eb; }
-.cmd-table th { background: #fdf6ec; color: #92400e; font-weight: 600; padding: 8px 10px; text-align: left; border-bottom: 2px solid #fde68a; white-space: nowrap; }
+.cmd-table th { background: #eef0fa; color: #3f4a9e; font-weight: 600; padding: 8px 10px; text-align: left; border-bottom: 2px solid #c9cff0; white-space: nowrap; }
 .cmd-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-.cmd-code { font-family: Consolas, monospace; color: #b45309; background: #fffbeb; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+.cmd-code { font-family: Consolas, monospace; color: #3f4a9e; background: #eef0fa; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
 .cmd-name { font-weight: 600; }
 .cmd-dir-badge { font-size: 10px; margin-left: 6px; padding: 1px 6px; border-radius: 8px; background: rgba(139,92,246,0.15); color: #6d28d9; }
 .cmd-side { font-size: 12px; color: #555; }
@@ -642,7 +642,7 @@ table.cmd-table { width: 100%; border-collapse: collapse; font-size: 12px; borde
 .bit-bv-single { text-align: center; }
 .bit-bv-reserved { text-align: center; color: #888; font-size: 10px; }
 .pv-muted { color: #888; font-size: 12px; }
-.pv-footer { margin-top: 32px; padding-top: 12px; border-top: 2px solid #fde68a; text-align: center; font-size: 11px; color: #d97706; }
+.pv-footer { margin-top: 32px; padding-top: 12px; border-top: 2px solid #c9cff0; text-align: center; font-size: 11px; color: #4a56c0; }
 @media print { body { padding: 0; } }
 </style>
 </head>
@@ -764,7 +764,7 @@ watch(() => props.active, (isActive) => {
 .proto-item:hover { background: var(--bg-tertiary); }
 .proto-item.active {
   background: var(--bg-tertiary);
-  border-left: 3px solid var(--accent-color, #f59e0b);
+  border-left: 3px solid var(--accent);
   padding-left: 9px;
 }
 
@@ -782,7 +782,7 @@ watch(() => props.active, (isActive) => {
   gap: 8px;
   margin-top: 3px;
 }
-.proto-ver { font-size: 11px; color: var(--accent-color, #f59e0b); }
+.proto-ver { font-size: 11px; color: var(--accent); }
 .proto-cmd-count { font-size: 11px; color: var(--text-tertiary); }
 
 .proto-empty {
@@ -884,7 +884,7 @@ watch(() => props.active, (isActive) => {
 
 /* 顶部品牌色横幅 */
 .pdf-cover {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, #5e6ad2 0%, #4a56c0 100%);
   color: white;
   padding: 40px 56px 36px;
   position: relative;
@@ -896,7 +896,7 @@ watch(() => props.active, (isActive) => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #fbbf24, #f59e0b, #d97706);
+  background: linear-gradient(90deg, #828fff, #5e6ad2, #4a56c0);
 }
 .pdf-cover h1 {
   font-size: 26px;
@@ -936,8 +936,8 @@ watch(() => props.active, (isActive) => {
 .pdf-desc {
   font-size: 14px;
   color: #444;
-  background: #fffbeb;
-  border-left: 4px solid #f59e0b;
+  background: #eef0fa;
+  border-left: 4px solid #5e6ad2;
   padding: 12px 16px;
   border-radius: 0 6px 6px 0;
   margin-bottom: 24px;
@@ -947,10 +947,10 @@ watch(() => props.active, (isActive) => {
 .pdf-footer {
   margin-top: 32px;
   padding-top: 12px;
-  border-top: 2px solid #fde68a;
+  border-top: 2px solid #c9cff0;
   text-align: center;
   font-size: 11px;
-  color: #d97706;
+  color: #4a56c0;
   font-family: 'Arial', sans-serif;
 }
 

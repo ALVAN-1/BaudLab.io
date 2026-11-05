@@ -41,22 +41,22 @@
 
     <!-- 筛选栏 -->
     <div class="log-filters">
-      <select v-model="filterLevel" class="log-filter">
-        <option value="">全部级别</option>
-        <option value="info">信息</option>
-        <option value="warn">警告</option>
-        <option value="error">错误</option>
-      </select>
-      <select v-model="filterCategory" class="log-filter">
-        <option value="">全部类别</option>
-        <option value="system">系统</option>
-        <option value="auth">用户</option>
-        <option value="protocol">协议</option>
-        <option value="serial">串口</option>
-        <option value="database">数据库</option>
-        <option value="update">更新</option>
-        <option value="network">网络</option>
-      </select>
+      <AppSelect v-model="filterLevel" class="log-filter" :options="[
+        { value: '', label: '全部级别' },
+        { value: 'info', label: '信息' },
+        { value: 'warn', label: '警告' },
+        { value: 'error', label: '错误' },
+      ]" />
+      <AppSelect v-model="filterCategory" class="log-filter" :options="[
+        { value: '', label: '全部类别' },
+        { value: 'system', label: '系统' },
+        { value: 'auth', label: '用户' },
+        { value: 'protocol', label: '协议' },
+        { value: 'serial', label: '串口' },
+        { value: 'database', label: '数据库' },
+        { value: 'update', label: '更新' },
+        { value: 'network', label: '网络' },
+      ]" />
       <input v-model="searchText" placeholder="搜索关键词..." class="log-search" />
     </div>
 
@@ -105,6 +105,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import AppSelect from '../components/AppSelect.vue';
 
 const logs = ref([]);
 const totalCount = ref(0);

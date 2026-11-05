@@ -1,0 +1,18 @@
+{
+  "type": "design",
+  "designSystems": [],
+  "primaryDesignSystem": null,
+  "assets": {
+    "BaudLab 风格探索": {
+      "versions": [
+        {
+          "path": "BaudLab 风格探索.html",
+          "createdAt": "2026-11-05T12:28:34.024Z",
+          "status": "needs-review"
+        }
+      ]
+    }
+  },
+  "createdAt": "2026-11-05T12:28:34.028Z",
+  "updatedAt": "2026-11-05T12:28:34.028Z"
+}

@@ -13,16 +13,20 @@
         <div class="form-row inline">
           <div>
             <label>目标串口</label>
-            <select class="input" v-model="selectedPort" :disabled="transferActive">
-              <option value="">— 选择串口 —</option>
-              <option v-for="p in portList" :key="p" :value="p">{{ p }}</option>
-            </select>
+            <AppSelect
+              v-model="selectedPort"
+              :disabled="transferActive"
+              placeholder="— 选择串口 —"
+              :options="[{ value: '', label: '— 选择串口 —' }, ...portList.map(p => ({ value: p, label: p }))]"
+            />
           </div>
           <div>
             <label>波特率</label>
-            <select class="input" v-model.number="baudRate" :disabled="transferActive || portOpened">
-              <option v-for="b in baudOptions" :key="b" :value="b">{{ b }}</option>
-            </select>
+            <AppSelect
+              v-model="baudRate"
+              :disabled="transferActive || portOpened"
+              :options="baudOptions.map(b => ({ value: b, label: String(b) }))"
+            />
           </div>
           <div>
             <label>串口状态</label>
@@ -42,10 +46,11 @@
         <div class="form-row inline">
           <div>
             <label>单帧 MTU (字节)</label>
-            <select class="input" v-model.number="mtuPreset" :disabled="transferActive">
-              <option v-for="m in mtuPresets" :key="m" :value="m">{{ m }}</option>
-              <option :value="-1">自定义</option>
-            </select>
+            <AppSelect
+              v-model="mtuPreset"
+              :disabled="transferActive"
+              :options="[...mtuPresets.map(m => ({ value: m, label: String(m) })), { value: -1, label: '自定义' }]"
+            />
           </div>
           <div v-if="mtuPreset === -1">
             <label>自定义 MTU</label>
@@ -331,6 +336,7 @@ import {
   crc32, MockReceiver, formatSpeed, formatDuration, formatBytes,
 } from '../utils/fileTransferProtocol';
 import { FileTransferSender, SENDER_STATE } from '../utils/fileTransferSender';
+import AppSelect from '../components/AppSelect.vue';
 
 const { availablePorts, hasElectron, openPort, closePort, sendPort, onData, onError, refreshPorts } = useSerial();
 const portList = computed(() => availablePorts.value || []);

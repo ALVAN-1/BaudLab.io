@@ -20,11 +20,11 @@
         <div class="feedback-form">
           <div class="form-row">
             <label class="form-label">类型 <span class="required">*</span></label>
-            <select v-model="form.type" class="form-input">
-              <option value="bug">🐛 Bug 报告</option>
-              <option value="feature">✨ 功能建议</option>
-              <option value="question">❓ 使用疑问</option>
-            </select>
+            <AppSelect v-model="form.type" :options="[
+              { value: 'bug', label: '🐛 Bug 报告' },
+              { value: 'feature', label: '✨ 功能建议' },
+              { value: 'question', label: '❓ 使用疑问' },
+            ]" />
           </div>
 
           <div class="form-row">
@@ -49,11 +49,11 @@
 
           <div class="form-row">
             <label class="form-label">优先级</label>
-            <select v-model="form.priority" class="form-input">
-              <option value="low">低</option>
-              <option value="medium">中</option>
-              <option value="high">高</option>
-            </select>
+            <AppSelect v-model="form.priority" :options="[
+              { value: 'low', label: '低' },
+              { value: 'medium', label: '中' },
+              { value: 'high', label: '高' },
+            ]" />
           </div>
 
           <p v-if="formError" class="form-error">{{ formError }}</p>
@@ -93,6 +93,7 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue';
 import { useGithubToken } from '../composables/useGithubToken';
+import AppSelect from '../components/AppSelect.vue';
 
 const { configured: tokenConfigured, ensureMigrated } = useGithubToken();
 

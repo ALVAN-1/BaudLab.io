@@ -195,10 +195,7 @@
                 <input class="input" v-model="memberForm.email" placeholder="成员邮箱" spellcheck="false" @keyup.enter="createMember">
                 <input class="input" type="password" v-model="memberForm.password" placeholder="初始密码（至少 8 位）" @keyup.enter="createMember">
                 <input class="input" v-model="memberForm.displayName" placeholder="显示名（选填）" @keyup.enter="createMember">
-                <select class="input" v-model="memberForm.role">
-                  <option value="工程师">工程师</option>
-                  <option value="管理员">管理员</option>
-                </select>
+                <AppSelect v-model="memberForm.role" :options="[{ value: '工程师', label: '工程师' }, { value: '管理员', label: '管理员' }]" />
                 <button class="btn btn-primary" :disabled="memberCreating || !canCreateMember" @click="createMember">
                   {{ memberCreating ? '创建中…' : '创建账号' }}
                 </button>
@@ -313,6 +310,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useDatabase } from '../composables/useDatabase';
+import AppSelect from '../components/AppSelect.vue';
 
 const hasElectron = typeof window !== 'undefined' && typeof window.electronAPI !== 'undefined';
 
@@ -877,7 +875,7 @@ onUnmounted(() => {
   background: none;
   padding: 0;
   font-size: 12px;
-  color: var(--accent-color, #3b82f6);
+  color: var(--accent);
   cursor: pointer;
 }
 .btn-link:hover { text-decoration: underline; }
@@ -908,8 +906,8 @@ onUnmounted(() => {
   border-radius: var(--radius-sm, 6px);
   background: var(--bg-primary, rgba(0, 0, 0, 0.12));
 }
-.db-discover-list li:hover { border-color: var(--accent-color, #3b82f6); }
-.db-discover-list li.active { border-color: var(--accent-color, #3b82f6); }
+.db-discover-list li:hover { border-color: var(--accent); }
+.db-discover-list li.active { border-color: var(--accent); }
 .db-disc-name { color: var(--text-primary); }
 .db-disc-url { color: var(--text-secondary); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 </style>

@@ -6,6 +6,9 @@
         <p class="view-subtitle">从左侧组件库拖拽卡片到右侧画布，绑定信号实时监控</p>
       </div>
       <div class="view-actions">
+        <button class="btn btn-secondary" @click="exportWorkflow" title="导出布局与绑定为工作流文件">导出工作流</button>
+        <button class="btn btn-secondary" @click="triggerImport">导入工作流</button>
+        <input type="file" ref="importFileRef" accept=".json,application/json" style="display: none" @change="onImportFile" />
         <button class="btn btn-secondary" @click="clearBoard">清空画布</button>
       </div>
     </div>
@@ -19,12 +22,13 @@
         </div>
         <div class="proto-selector-section">
           <label class="proto-selector-label">协议版本</label>
-          <select class="input proto-selector" v-model="selectedProtoId" @change="onProtoChange">
-            <option value="">— 选择协议 —</option>
-            <option v-for="p in protoList" :key="p.id" :value="p.id">
-              {{ p.name }} {{ p.version }}
-            </option>
-          </select>
+          <AppSelect
+            v-model="selectedProtoId"
+            :disabled="false"
+            placeholder="— 选择协议 —"
+            :options="[{ value: '', label: '— 选择协议 —' }, ...protoList.map(p => ({ value: p.id, label: `${p.name} ${p.version}` }))]"
+            @change="onProtoChange"
+          />
         </div>
         <div class="component-list">
           <div
@@ -66,8 +70,8 @@
                       <line x1="0" y1="12.5" x2="120" y2="12.5" stroke="#3a3a4e" stroke-width="0.5" stroke-dasharray="2 2" />
                       <line x1="0" y1="25" x2="120" y2="25" stroke="#3a3a4e" stroke-width="0.5" stroke-dasharray="2 2" />
                       <line x1="0" y1="37.5" x2="120" y2="37.5" stroke="#3a3a4e" stroke-width="0.5" stroke-dasharray="2 2" />
-                      <polyline :points="demoChartPoints" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                      <circle :cx="120" :cy="demoChartLastY" r="2" fill="#f59e0b" />
+                      <polyline :points="demoChartPoints" fill="none" stroke="#5e6ad2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      <circle :cx="120" :cy="demoChartLastY" r="2" fill="#5e6ad2" />
                     </svg>
                     <div class="demo-chart-axis"><span>30s前</span><span>现在</span></div>
                   </div>
@@ -79,6 +83,44 @@
                     <div class="demo-switch-track" :class="sw.on ? 'on' : 'off'"><div class="demo-switch-knob"></div></div>
                     <span class="demo-switch-state" :class="sw.on ? 'on' : 'off'">{{ sw.on ? 'ON' : 'OFF' }}</span>
                   </div>
+                </div>
+                <!-- 命令按钮示例 -->
+                <div v-else-if="hoveredComp && hoveredComp.type === 'command-btn'" class="comp-preview-demo cmd-demo">
+                  <div class="demo-cmd-btn">▶ 发送启动指令</div>
+                  <div class="demo-cmd-btn secondary">▶ 停止</div>
+                </div>
+                <!-- 仪表盘示例 -->
+                <div v-else-if="hoveredComp && hoveredComp.type === 'gauge'" class="comp-preview-demo gauge-demo">
+                  <svg viewBox="0 0 120 74" class="demo-gauge-svg">
+                    <path d="M 12 66 A 48 48 0 0 1 108 66" fill="none" stroke="rgba(94,106,210,0.18)" stroke-width="9" stroke-linecap="round"/>
+                    <path d="M 12 66 A 48 48 0 0 1 83 25.4" fill="none" stroke="#5e6ad2" stroke-width="9" stroke-linecap="round"/>
+                    <text x="60" y="56" text-anchor="middle" class="demo-gauge-val">62%</text>
+                  </svg>
+                  <div class="demo-gauge-label">目标速度 1860 rpm</div>
+                </div>
+                <!-- 状态指示灯示例 -->
+                <div v-else-if="hoveredComp && hoveredComp.type === 'status-lamp'" class="comp-preview-demo lamp-demo">
+                  <div class="demo-lamp-row">
+                    <span class="demo-lamp on"></span><span class="demo-lamp-label">运行中</span>
+                  </div>
+                  <div class="demo-lamp-row">
+                    <span class="demo-lamp off"></span><span class="demo-lamp-label">故障复位</span>
+                  </div>
+                </div>
+                <!-- 滑块示例 -->
+                <div v-else-if="hoveredComp && hoveredComp.type === 'slider'" class="comp-preview-demo slider-demo">
+                  <div class="demo-slider-row">
+                    <span class="demo-slider-label">占空比</span>
+                    <div class="demo-slider-track"><div class="demo-slider-fill" style="width: 64%"></div><div class="demo-slider-knob" style="left: 64%"></div></div>
+                    <span class="demo-slider-val">64%</span>
+                  </div>
+                </div>
+                <!-- 其他新组件：通用示例 -->
+                <div v-else-if="hoveredComp && isNewBoardComp(hoveredComp.type)" class="comp-preview-demo demo-generic">
+                  <div class="demo-generic-icon">
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use :href="'#' + (componentLibrary.find(c => c.type === hoveredComp.type)?.iconRef || 'i-board-card')" /></svg>
+                  </div>
+                  <p class="demo-generic-text">{{ componentLibrary.find(c => c.type === hoveredComp.type)?.desc }}</p>
                 </div>
                 <div class="comp-preview-tip">拖拽到右侧画布即可使用</div>
               </div>
@@ -105,7 +147,7 @@
           <svg class="connections-layer" width="3000" height="2000">
             <defs>
               <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b" />
+                <polygon points="0 0, 10 3.5, 0 7" fill="#5e6ad2" />
               </marker>
             </defs>
             <!-- 已保存的连线 -->
@@ -248,6 +290,126 @@
                 </template>
                 <p v-else class="data-unbound">未绑定信号<br /><span>点击 ⚙ 配置</span></p>
               </div>
+
+              <!-- 命令按钮 -->
+              <div v-else-if="card.type === 'command-btn'" class="cmd-btn-view">
+                <template v-if="card.config.cmdCode != null && getCmdDef(card.config.cmdCode)">
+                  <button class="cmd-send-btn" @click.stop="sendCommand(card)" :disabled="cmdSending">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-send"/></svg>
+                    {{ card.config.title || getCmdDef(card.config.cmdCode).name }}
+                  </button>
+                  <p class="cmd-btn-sub">0x{{ Number(card.config.cmdCode).toString(16).toUpperCase().padStart(2, '0') }} · 点击下发</p>
+                </template>
+                <p v-else class="data-unbound">未选择命令<br /><span>点击 ⚙ 配置</span></p>
+              </div>
+
+              <!-- 仪表盘 -->
+              <div v-else-if="card.type === 'gauge'" class="gauge-view">
+                <template v-if="card.config.signalName && getSignal(card.config.signalName)">
+                  <svg class="gauge-svg" :width="card.w - 24" :height="card.h - 66" :viewBox="`0 0 ${card.w - 24} ${card.h - 66}`">
+                    <path :d="gaugeArcPath(card.w - 24, card.h - 66)" fill="none" stroke="rgba(94,106,210,0.18)" stroke-width="10" stroke-linecap="round"/>
+                    <path v-if="gaugePct(card) > 0.005" :d="gaugeArcPath(card.w - 24, card.h - 66)" fill="none" stroke="#5e6ad2" stroke-width="10" stroke-linecap="round"
+                      :stroke-dasharray="`${gaugeArcLen(card.w - 24, card.h - 66) * gaugePct(card)} ${gaugeArcLen(card.w - 24, card.h - 66)}`"/>
+                    <text :x="(card.w - 24) / 2" :y="card.h - 78" text-anchor="middle" class="gauge-value">
+                      {{ gaugeDisplay(card) }}<tspan class="gauge-unit" v-if="getSignal(card.config.signalName).unit"> {{ getSignal(card.config.signalName).unit }}</tspan>
+                    </text>
+                  </svg>
+                  <p class="gauge-signal-name">{{ card.config.signalName }}</p>
+                </template>
+                <p v-else class="data-unbound">未绑定信号<br /><span>点击 ⚙ 配置</span></p>
+              </div>
+
+              <!-- 状态指示灯 -->
+              <div v-else-if="card.type === 'status-lamp'" class="lamp-view">
+                <template v-if="card.config.signalName && getSignal(card.config.signalName)">
+                  <span class="lamp-dot" :class="lampOn(card) ? 'on' : 'off'"></span>
+                  <p class="lamp-state">{{ lampOn(card) ? (card.config.onText || '正常') : (card.config.offText || '停止') }}</p>
+                  <p class="lamp-signal-name">{{ card.config.signalName }}</p>
+                </template>
+                <p v-else class="data-unbound">未绑定信号<br /><span>点击 ⚙ 配置</span></p>
+              </div>
+
+              <!-- 位域面板 -->
+              <div v-else-if="card.type === 'bitfield-panel'" class="bitfield-view">
+                <template v-if="card.config.fieldKey && getBitmapGroup(card.config.fieldKey)">
+                  <div class="bit-grid">
+                    <div v-for="bit in getBitmapGroup(card.config.fieldKey).bits" :key="bit.bit"
+                      class="bit-box" :class="{ on: isBitOn(card, bit) }">
+                      <span class="bit-idx">b{{ bit.bit }}</span>
+                      <span class="bit-name">{{ bit.name }}</span>
+                    </div>
+                  </div>
+                  <p class="bitfield-signal-name">{{ getBitmapGroup(card.config.fieldKey).fieldName }}</p>
+                </template>
+                <p v-else class="data-unbound">未选择位域字段<br /><span>点击 ⚙ 配置</span></p>
+              </div>
+
+              <!-- 统计卡 -->
+              <div v-else-if="card.type === 'stats-card'" class="stats-view">
+                <template v-if="card.config.signalName && getSignal(card.config.signalName)">
+                  <div class="stats-grid">
+                    <div class="stat-cell"><span class="stat-k">当前</span><span class="stat-v">{{ statsOf(card).cur }}</span></div>
+                    <div class="stat-cell"><span class="stat-k">最小</span><span class="stat-v">{{ statsOf(card).min }}</span></div>
+                    <div class="stat-cell"><span class="stat-k">最大</span><span class="stat-v">{{ statsOf(card).max }}</span></div>
+                    <div class="stat-cell"><span class="stat-k">均值</span><span class="stat-v">{{ statsOf(card).avg }}</span></div>
+                  </div>
+                  <p class="stats-signal-name">{{ card.config.signalName }} · 最近 {{ card.config.timeWindow || 30 }}s</p>
+                </template>
+                <p v-else class="data-unbound">未绑定信号<br /><span>点击 ⚙ 配置</span></p>
+              </div>
+
+              <!-- 滑块控制 -->
+              <div v-else-if="card.type === 'slider'" class="slider-view">
+                <template v-if="card.config.signalName && getSignal(card.config.signalName)">
+                  <div class="slider-row">
+                    <input type="range" class="range-input"
+                      :min="card.config.min ?? 0" :max="card.config.max ?? 100" :step="card.config.step ?? 1"
+                      :value="sliderLocal(card)"
+                      @input.stop="onSliderInput(card, $event)"
+                      @change.stop="onSliderChange(card)"
+                      @mousedown.stop
+                    />
+                    <span class="slider-val">{{ sliderLocal(card) }}<small v-if="getSignal(card.config.signalName).unit">{{ getSignal(card.config.signalName).unit }}</small></span>
+                  </div>
+                  <p class="slider-signal-name">{{ card.config.signalName }}</p>
+                </template>
+                <p v-else class="data-unbound">未绑定信号<br /><span>点击 ⚙ 配置</span></p>
+              </div>
+
+              <!-- 阈值告警 -->
+              <div v-else-if="card.type === 'threshold-alert'" class="alert-view" :class="{ alerting: isAlerting(card) }">
+                <template v-if="card.config.signalName && getSignal(card.config.signalName)">
+                  <div class="alert-icon-row">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-board-alert"/></svg>
+                    <span class="alert-state-text">{{ isAlerting(card) ? '告警' : '正常' }}</span>
+                  </div>
+                  <p class="alert-value">{{ getSignal(card.config.signalName).value.toFixed(2) }}<small>{{ getSignal(card.config.signalName).unit }}</small></p>
+                  <p class="alert-cond">{{ card.config.alertDir === 'lt' ? '<' : '>' }} {{ card.config.threshold ?? 0 }}</p>
+                </template>
+                <p v-else class="data-unbound">未绑定信号<br /><span>点击 ⚙ 配置</span></p>
+              </div>
+
+              <!-- 报文日志 -->
+              <div v-else-if="card.type === 'frame-log'" class="log-view">
+                <div class="log-body">
+                  <div v-for="(entry, i) in filteredFrameLog(card)" :key="frameLog.length - i" class="log-line">
+                    <span class="log-time">{{ entry.time }}</span>
+                    <span class="log-cmd" :class="{ unk: entry.cmd === '未知' }">{{ entry.cmd }}</span>
+                    <span class="log-hex">{{ entry.hex }}</span>
+                  </div>
+                  <div v-if="filteredFrameLog(card).length === 0" class="log-empty">等待串口数据…</div>
+                </div>
+              </div>
+
+              <!-- 文本备注 -->
+              <div v-else-if="card.type === 'note'" class="note-view">
+                <p class="note-text">{{ card.config.text || '双击内容外的 ⚙ 编辑备注' }}</p>
+              </div>
+
+              <!-- 分组容器 -->
+              <div v-else-if="card.type === 'group-box'" class="group-view">
+                <span class="group-label">{{ card.config.title || '分组' }}</span>
+              </div>
             </div>
             <div class="resize-handle" @mousedown.stop="startResize($event, card)"></div>
           </div>
@@ -278,19 +440,149 @@
               <label>标题</label>
               <input type="text" class="input" v-model="configDraft.title" placeholder="显示标题" maxlength="32" />
             </div>
-            <div class="form-row">
-              <label>绑定信号</label>
-              <select class="input" v-model="configDraft.signalName" :disabled="!selectedProtoId">
-                <option value="">{{ selectedProtoId ? '— 选择信号 —' : '— 请先选择协议 —' }}</option>
-                <option v-for="sig in signalList" :key="sig.name" :value="sig.name">
-                  {{ sig.name }} ({{ sig.type }}{{ sig.unit ? ', ' + sig.unit : '' }})
-                </option>
-              </select>
-            </div>
-            <template v-if="configCard?.type === 'line-chart'">
+
+            <!-- 命令按钮：选择命令 -->
+            <template v-if="configCard?.type === 'command-btn'">
+              <div class="form-row">
+                <label>绑定命令</label>
+                <AppSelect
+                  v-model="configDraft.cmdCode"
+                  :disabled="!selectedProtoId"
+                  :placeholder="selectedProtoId ? '— 选择命令 —' : '— 请先选择协议 —'"
+                  :options="[
+                    { value: null, label: selectedProtoId ? '— 选择命令 —' : '— 请先选择协议 —' },
+                    ...protoFrame.cmds.map(c => ({ value: c.cmd, label: `${c.name} (0x${c.cmd.toString(16).toUpperCase().padStart(2, '0')}${c.fields.length ? '，' + c.fields.length + ' 字段' : '，无数据'})` })),
+                  ]"
+                />
+              </div>
+              <p class="config-hint">发送时按命令字段顺序组帧，字段值取各信号当前值</p>
+            </template>
+
+            <!-- 位域面板：选择 bitmap 字段组 -->
+            <template v-else-if="configCard?.type === 'bitfield-panel'">
+              <div class="form-row">
+                <label>位域字段</label>
+                <AppSelect
+                  v-model="configDraft.fieldKey"
+                  :disabled="!selectedProtoId"
+                  :placeholder="selectedProtoId ? '— 选择位域字段 —' : '— 请先选择协议 —'"
+                  :options="[
+                    { value: '', label: selectedProtoId ? '— 选择位域字段 —' : '— 请先选择协议 —' },
+                    ...bitmapGroups.map(g => ({ value: g.key, label: `${g.fieldName}（${g.bits.length} 个状态位）` })),
+                  ]"
+                />
+              </div>
+            </template>
+
+            <!-- 文本备注：内容 -->
+            <template v-else-if="configCard?.type === 'note'">
+              <div class="form-row">
+                <label>备注内容</label>
+                <textarea class="input" rows="4" v-model="configDraft.text" placeholder="输入备注文字…" maxlength="500"></textarea>
+              </div>
+            </template>
+
+            <!-- 报文日志：过滤 -->
+            <template v-else-if="configCard?.type === 'frame-log'">
+              <div class="form-row">
+                <label>过滤关键字</label>
+                <input type="text" class="input" v-model="configDraft.filter" placeholder="留空显示全部，可输命令名或 HEX" maxlength="32" />
+              </div>
+              <div class="form-row">
+                <label>最大行数</label>
+                <input type="number" class="input" v-model.number="configDraft.maxLines" min="20" max="500" step="20" />
+              </div>
+            </template>
+
+            <!-- 其余组件：绑定信号 -->
+            <template v-else-if="configCard?.type !== 'group-box'">
+              <div class="form-row">
+                <label>绑定信号</label>
+                <AppSelect
+                  v-model="configDraft.signalName"
+                  :disabled="!selectedProtoId"
+                  :placeholder="selectedProtoId ? '— 选择信号 —' : '— 请先选择协议 —'"
+                  :options="[
+                    { value: '', label: selectedProtoId ? '— 选择信号 —' : '— 请先选择协议 —' },
+                    ...signalList.map(sig => ({ value: sig.name, label: `${sig.name} (${sig.type}${sig.unit ? ', ' + sig.unit : ''})` })),
+                  ]"
+                />
+              </div>
+            </template>
+
+            <template v-if="configCard?.type === 'line-chart' || configCard?.type === 'stats-card'">
               <div class="form-row">
                 <label>时间窗口（秒）</label>
                 <input type="number" class="input" v-model.number="configDraft.timeWindow" min="5" max="300" step="5" />
+              </div>
+            </template>
+
+            <template v-if="configCard?.type === 'gauge'">
+              <div class="form-row-pair">
+                <div class="form-row">
+                  <label>量程最小值</label>
+                  <input type="number" class="input" v-model.number="configDraft.min" step="1" />
+                </div>
+                <div class="form-row">
+                  <label>量程最大值</label>
+                  <input type="number" class="input" v-model.number="configDraft.max" step="1" />
+                </div>
+              </div>
+            </template>
+
+            <template v-if="configCard?.type === 'slider'">
+              <div class="form-row-pair">
+                <div class="form-row">
+                  <label>最小值</label>
+                  <input type="number" class="input" v-model.number="configDraft.min" step="1" />
+                </div>
+                <div class="form-row">
+                  <label>最大值</label>
+                  <input type="number" class="input" v-model.number="configDraft.max" step="1" />
+                </div>
+                <div class="form-row">
+                  <label>步长</label>
+                  <input type="number" class="input" v-model.number="configDraft.step" min="0.1" step="0.1" />
+                </div>
+              </div>
+              <p class="config-hint">拖动松手后下发，拖动中按 200ms 限频发送，避免刷爆串口</p>
+            </template>
+
+            <template v-if="configCard?.type === 'status-lamp'">
+              <div class="form-row-pair">
+                <div class="form-row">
+                  <label>亮灯文案（ON）</label>
+                  <input type="text" class="input" v-model="configDraft.onText" placeholder="正常" maxlength="10" />
+                </div>
+                <div class="form-row">
+                  <label>熄灯文案（OFF）</label>
+                  <input type="text" class="input" v-model="configDraft.offText" placeholder="停止" maxlength="10" />
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="config-check">
+                  <input type="checkbox" v-model="configDraft.invert" />
+                  取反显示（信号为 ON 时熄灯）
+                </label>
+              </div>
+            </template>
+
+            <template v-if="configCard?.type === 'threshold-alert'">
+              <div class="form-row-pair">
+                <div class="form-row">
+                  <label>告警条件</label>
+                  <AppSelect
+                    v-model="configDraft.alertDir"
+                    :options="[
+                      { value: 'gt', label: '大于（>）' },
+                      { value: 'lt', label: '小于（<）' },
+                    ]"
+                  />
+                </div>
+                <div class="form-row">
+                  <label>阈值</label>
+                  <input type="number" class="input" v-model.number="configDraft.threshold" step="0.1" />
+                </div>
               </div>
             </template>
           </div>
@@ -318,27 +610,19 @@
 
             <div class="form-row">
               <label>触发条件</label>
-              <select class="input" v-model="linkConfigDraft.conditionType">
-                <template v-if="isSourceBoolean">
-                  <option value="on">信号为 ON 时触发</option>
-                  <option value="off">信号为 OFF 时触发</option>
-                </template>
-                <template v-else-if="isSourceEnum">
-                  <option value="enum_eq">等于枚举值时触发</option>
-                </template>
-                <template v-else>
-                  <option value="gt">大于 ( &gt; )</option>
-                  <option value="lt">小于 ( &lt; )</option>
-                  <option value="eq">等于 ( = )</option>
-                </template>
-              </select>
+              <AppSelect
+                v-model="linkConfigDraft.conditionType"
+                :options="isSourceBoolean
+                  ? [{ value: 'on', label: '信号为 ON 时触发' }, { value: 'off', label: '信号为 OFF 时触发' }]
+                  : isSourceEnum
+                    ? [{ value: 'enum_eq', label: '等于枚举值时触发' }]
+                    : [{ value: 'gt', label: '大于 ( > )' }, { value: 'lt', label: '小于 ( < )' }, { value: 'eq', label: '等于 ( = )' }]"
+              />
             </div>
 
             <div v-if="isSourceEnum" class="form-row">
               <label>枚举值</label>
-              <select class="input" v-model.number="linkConfigDraft.conditionValue">
-                <option v-for="opt in sourceEnumOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-              </select>
+              <AppSelect v-model.number="linkConfigDraft.conditionValue" :options="sourceEnumOptions" />
             </div>
             <div v-else-if="!isSourceBoolean" class="form-row">
               <label>条件值</label>
@@ -347,16 +631,12 @@
 
             <div class="form-row">
               <label>触发动作</label>
-              <select class="input" v-model="linkConfigDraft.actionType">
-                <template v-if="isTargetToggleable">
-                  <option value="toggle">翻转开关状态</option>
-                  <option value="on">打开开关</option>
-                  <option value="off">关闭开关</option>
-                </template>
-                <template v-else>
-                  <option value="highlight">高亮闪烁</option>
-                </template>
-              </select>
+              <AppSelect
+                v-model="linkConfigDraft.actionType"
+                :options="isTargetToggleable
+                  ? [{ value: 'toggle', label: '翻转开关状态' }, { value: 'on', label: '打开开关' }, { value: 'off', label: '关闭开关' }]
+                  : [{ value: 'highlight', label: '高亮闪烁' }]"
+              />
             </div>
 
             <div class="link-config-hint">
@@ -370,14 +650,27 @@
         </div>
       </div>
     </Transition>
+    <div v-if="toast.show" class="save-toast" :class="toast.type">{{ toast.msg }}</div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { crc16, sumCheck } from '../data/protocolDefinitions';
+import AppSelect from '../components/AppSelect.vue';
 
 const hasElectron = typeof window !== 'undefined' && window.electronAPI && window.electronAPI.db;
+
+/* ── Toast 提示 ── */
+const toast = reactive({ show: false, type: 'info', msg: '' });
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+  toast.show = true;
+  toast.type = type;
+  toast.msg = msg;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.show = false; }, 2600);
+}
 
 const viewportRef = ref(null);
 const canvasRef = ref(null);
@@ -418,9 +711,22 @@ function onPanEnd() {
 
 /* ── 组件库 ── */
 const componentLibrary = [
+  /* 监控展示 */
   { type: 'data-card', iconRef: 'i-board-card', name: '数据卡片', desc: '显示开关量 / 枚举 / 数值', w: 200, h: 150 },
   { type: 'line-chart', iconRef: 'i-board-chart', name: '趋势曲线', desc: '实时折线图', w: 360, h: 220 },
+  { type: 'gauge', iconRef: 'i-board-gauge', name: '仪表盘', desc: '量程信号环形仪表', w: 220, h: 200 },
+  { type: 'status-lamp', iconRef: 'i-board-lamp', name: '状态指示灯', desc: '布尔信号指示灯', w: 170, h: 130 },
+  { type: 'bitfield-panel', iconRef: 'i-board-bits', name: '位域面板', desc: '状态字节 8bit 摊开显示', w: 280, h: 170 },
+  { type: 'stats-card', iconRef: 'i-board-stats', name: '统计卡', desc: '最小 / 最大 / 均值', w: 220, h: 170 },
+  /* 控制下发 */
+  { type: 'command-btn', iconRef: 'i-board-btn', name: '命令按钮', desc: '一键下发预置指令', w: 190, h: 110 },
   { type: 'signal-switch', iconRef: 'i-board-switch', name: '信号开关', desc: '可绑定信号的开/关', w: 180, h: 150 },
+  { type: 'slider', iconRef: 'i-board-slider', name: '滑块控制', desc: '连续量下发（限幅限频）', w: 260, h: 140 },
+  /* 分析与布局 */
+  { type: 'threshold-alert', iconRef: 'i-board-alert', name: '阈值告警', desc: '超限变色提醒', w: 200, h: 150 },
+  { type: 'frame-log', iconRef: 'i-board-log', name: '报文日志', desc: '帧流水实时滚动', w: 380, h: 260 },
+  { type: 'note', iconRef: 'i-board-note', name: '文本备注', desc: '画布说明文字', w: 220, h: 110 },
+  { type: 'group-box', iconRef: 'i-board-group', name: '分组容器', desc: '圈住卡片一起拖动', w: 420, h: 300 },
 ];
 
 function onCompHover(e, type) {
@@ -706,9 +1012,12 @@ let unsubSerialData = null;
 /* 串口数据 → 帧解析 → signalStore 更新 */
 function onSerialData(data) {
   if (!data || !data.hex) return;
-  const bytes = data.hex.trim().split(/\s+/).map(b => parseInt(b, 16));
+  const hex = data.hex.trim();
+  const bytes = hex.split(/\s+/).map(b => parseInt(b, 16));
   if (bytes.length < 3 || bytes.some(isNaN)) return;
-  parseFrame(bytes);
+  const cmdName = parseFrame(bytes);
+  /* 报文日志卡数据源：记录每一帧 RX */
+  pushFrameLog(hex.toUpperCase(), cmdName);
 }
 
 /* 多字节整数解码（大端） */
@@ -892,6 +1201,7 @@ function parseFrame(bytes) {
 
   /* 检查连线条件 */
   evaluateAllConnections();
+  return cmdDef.name;
 }
 
 /* ── 开关切换：构建 TX 帧 + 串口发送 ── */
@@ -1001,6 +1311,219 @@ async function sendControlFrame(src, bitOrEnumValue) {
   } catch (e) {
     console.warn('[CustomBoard] 串口发送失败:', e);
   }
+}
+
+/* ══════════ 新组件逻辑（命令按钮/仪表盘/指示灯/位域/统计/滑块/告警/日志） ══════════ */
+
+/* 命令定义查找 */
+function getCmdDef(cmdCode) {
+  return protoFrame.cmds.find(c => c.cmd === cmdCode) || null;
+}
+
+/* 组帧：帧头 + 地址 + 命令字 + 长度 + 载荷 + 校验 + 帧尾（独立于信号开关的 TX 路径） */
+async function assembleAndSend(cmdCode, payload) {
+  if (!hasElectron || !window.electronAPI.serial) return;
+  const frame = [];
+  protoFrame.frameHeader.forEach(b => frame.push(b));
+  frame.push(protoFrame.address);
+  const cLen = protoFrame.cmdLen;
+  for (let i = cLen - 1; i >= 0; i--) frame.push((cmdCode >> (i * 8)) & 0xFF);
+  frame.push(payload.length);
+  payload.forEach(b => frame.push(b));
+  const checkBytes = [protoFrame.address];
+  for (let i = cLen - 1; i >= 0; i--) checkBytes.push((cmdCode >> (i * 8)) & 0xFF);
+  checkBytes.push(payload.length);
+  payload.forEach(b => checkBytes.push(b));
+  const checkResult = protoFrame.checkType === 'CRC16' ? crc16(checkBytes) : sumCheck(checkBytes);
+  checkResult.forEach(b => frame.push(b));
+  protoFrame.frameTail.forEach(b => frame.push(b));
+  const hexStr = frame.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+  try {
+    const activeRes = await window.electronAPI.serial.active();
+    if (activeRes && activeRes.length > 0) {
+      await window.electronAPI.serial.send({ portPath: activeRes[0], data: hexStr, format: 'hex' });
+    }
+  } catch (e) {
+    console.warn('[CustomBoard] 串口发送失败:', e);
+  }
+}
+
+/* 命令按钮：按命令字段顺序组帧，字段值取各信号当前值 */
+const cmdSending = ref(false);
+async function sendCommand(card) {
+  const cmdDef = getCmdDef(card.config.cmdCode);
+  if (!cmdDef || cmdSending.value) return;
+  cmdSending.value = true;
+  try {
+    const payload = [];
+    for (const field of (cmdDef.fields || [])) {
+      const len = field.length || 1;
+      let val = 0;
+      if (field.type === 'bitmap' && field.bits) {
+        for (const b of field.bits) {
+          const bSig = signalStore[`${field.name}·${b.name}`];
+          if (bSig && bSig.value) val |= (1 << b.bit);
+        }
+      } else {
+        const fSig = signalStore[`${cmdDef.name}·${field.name}`];
+        if (fSig) val = Number(fSig.value) || 0;
+      }
+      for (let i = len - 1; i >= 0; i--) payload.push((val >> (i * 8)) & 0xFF);
+    }
+    await assembleAndSend(cmdDef.cmd, payload);
+    card._flash = 3;
+  } finally {
+    cmdSending.value = false;
+  }
+}
+
+/* 位域分组：signalSourceMap 中 bitmap 字段按 命令:字段 聚合 */
+const bitmapGroups = computed(() => {
+  const groups = {};
+  for (const src of Object.values(signalSourceMap)) {
+    if (src.fieldDef && src.fieldDef.type === 'bitmap' && src.fieldDef.bits) {
+      const key = `${src.cmdCode}:${src.fieldName}`;
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          cmdCode: src.cmdCode,
+          fieldName: src.fieldName,
+          bits: src.fieldDef.bits,
+        };
+      }
+    }
+  }
+  return Object.values(groups);
+});
+function getBitmapGroup(key) {
+  return bitmapGroups.value.find(g => g.key === key) || null;
+}
+function isBitOn(card, bit) {
+  const g = getBitmapGroup(card.config.fieldKey);
+  if (!g) return false;
+  const sig = signalStore[`${g.fieldName}·${bit.name}`];
+  return !!(sig && sig.value);
+}
+
+/* 仪表盘几何：半径统一由容器尺寸决定，弧长与路径必须同半径 */
+function gaugeRadius(w, h) {
+  return Math.min(w / 2 - 10, h * 0.62);
+}
+function gaugeArcLen(w, h) {
+  return Math.PI * gaugeRadius(w, h); // 半圆弧长
+}
+function gaugeArcPath(w, h) {
+  const r = gaugeRadius(w, h);
+  const cx = w / 2;
+  const cy = h - 8;
+  return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+}
+function gaugePct(card) {
+  const sig = getSignal(card.config.signalName);
+  if (!sig) return 0;
+  const min = card.config.min ?? 0;
+  const max = card.config.max ?? 100;
+  const span = max - min;
+  if (span <= 0) return 0;
+  return Math.max(0, Math.min(1, (Number(sig.value) - min) / span));
+}
+function gaugeDisplay(card) {
+  const sig = getSignal(card.config.signalName);
+  if (!sig) return '—';
+  const v = Number(sig.value) || 0;
+  const pct = gaugePct(card);
+  /* 量程大（>50）显示整数，否则保留 1 位小数 */
+  return (card.config.max ?? 100) - (card.config.min ?? 0) > 50 ? Math.round(v).toString() : v.toFixed(1);
+}
+
+/* 状态指示灯 */
+function lampOn(card) {
+  const sig = getSignal(card.config.signalName);
+  if (!sig) return false;
+  const on = sig.type === 'boolean' ? !!sig.value : Number(sig.value) > 0;
+  return card.config.invert ? !on : on;
+}
+
+/* 统计卡：从信号 history 取时间窗口内的 min/max/avg */
+function statsOf(card) {
+  const sig = getSignal(card.config.signalName);
+  if (!sig || sig.history.length === 0) return { cur: '—', min: '—', max: '—', avg: '—' };
+  const tw = (card.config.timeWindow || 30) * 1000;
+  const now = Date.now();
+  const data = sig.history.filter(p => p.t >= now - tw && typeof p.v === 'number');
+  const src = data.length ? data : sig.history.filter(p => typeof p.v === 'number');
+  if (!src.length) return { cur: '—', min: '—', max: '—', avg: '—' };
+  let min = Infinity, max = -Infinity, sum = 0;
+  for (const p of src) { if (p.v < min) min = p.v; if (p.v > max) max = p.v; sum += p.v; }
+  const fmt = (v) => Math.abs(v - Math.round(v)) < 0.01 ? Math.round(v).toString() : v.toFixed(2);
+  return { cur: fmt(Number(sig.value)), min: fmt(min), max: fmt(max), avg: fmt(sum / src.length) };
+}
+
+/* 滑块：本地显示值 + 限频发送（拖动中 200ms 一帧，松手立即发最终值） */
+const sliderVals = reactive({});
+const sliderLastSent = {};
+const sliderPending = {};
+function sliderLocal(card) {
+  if (sliderVals[card.id] !== undefined) return sliderVals[card.id];
+  const sig = getSignal(card.config.signalName);
+  return sig ? Number(sig.value) || 0 : (card.config.min ?? 0);
+}
+function doSliderSend(card) {
+  const src = signalSourceMap[card.config.signalName];
+  if (!src) return;
+  sendControlFrame(src, sliderLocal(card));
+}
+function onSliderInput(card, e) {
+  sliderVals[card.id] = Number(e.target.value);
+  const now = Date.now();
+  if (now - (sliderLastSent[card.id] || 0) >= 200) {
+    sliderLastSent[card.id] = now;
+    doSliderSend(card);
+  } else if (!sliderPending[card.id]) {
+    /* 限频窗口内的新值：挂起，窗口到点后补发最新值 */
+    sliderPending[card.id] = setTimeout(() => {
+      sliderPending[card.id] = null;
+      sliderLastSent[card.id] = Date.now();
+      doSliderSend(card);
+    }, 200);
+  }
+}
+function onSliderChange(card) {
+  if (sliderPending[card.id]) { clearTimeout(sliderPending[card.id]); sliderPending[card.id] = null; }
+  sliderLastSent[card.id] = Date.now();
+  doSliderSend(card);
+  /* 800ms 后回到跟随信号值显示，让设备回传接管 */
+  setTimeout(() => { delete sliderVals[card.id]; }, 800);
+}
+
+/* 阈值告警 */
+function isAlerting(card) {
+  const sig = getSignal(card.config.signalName);
+  if (!sig || typeof sig.value !== 'number') return false;
+  const th = Number(card.config.threshold ?? 0);
+  return card.config.alertDir === 'lt' ? sig.value < th : sig.value > th;
+}
+
+/* 报文日志：全局环形缓冲，所有日志卡共享数据源、各自过滤 */
+const frameLog = reactive([]);
+function pushFrameLog(hex, cmdName) {
+  const d = new Date();
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}.${String(d.getMilliseconds()).padStart(3, '0')}`;
+  frameLog.push({ t: Date.now(), time, hex, cmd: cmdName || '未知' });
+  if (frameLog.length > 300) frameLog.splice(0, frameLog.length - 300);
+}
+function filteredFrameLog(card) {
+  const kw = (card.config.filter || '').toLowerCase();
+  const maxLines = card.config.maxLines || 100;
+  const list = kw
+    ? frameLog.filter(e => e.cmd.toLowerCase().includes(kw) || e.hex.toLowerCase().includes(kw))
+    : frameLog;
+  return list.slice(-maxLines).reverse();
+}
+
+/* 悬浮预览：新组件判定（走通用 demo 块） */
+function isNewBoardComp(type) {
+  return ['threshold-alert', 'frame-log', 'stats-card', 'note', 'group-box', 'bitfield-panel'].includes(type);
 }
 
 /* ── 折线图数据构建 ── */
@@ -1160,16 +1683,26 @@ function onDrop(e) {
     y: Math.round(y / 10) * 10,
     w: comp.w,
     h: comp.h,
-    config: { title: '', signalName: '', timeWindow: 30 },
+    config: { title: '', signalName: '', timeWindow: 30, cmdCode: null, fieldKey: '', text: '', filter: '', maxLines: 100, min: 0, max: 100, step: 1, onText: '', offText: '', invert: false, alertDir: 'gt', threshold: 0 },
     _flash: 0,
   });
   persist();
 }
 
 let dragState = null;
+/* 分组容器拖动时跟随移动的成员卡片（相对偏移） */
+let groupDragMembers = null;
+function collectGroupMembers(groupCard) {
+  return placedCards
+    .filter(c => c.id !== groupCard.id && c.type !== 'group-box'
+      && c.x + c.w / 2 > groupCard.x && c.x + c.w / 2 < groupCard.x + groupCard.w
+      && c.y + c.h / 2 > groupCard.y && c.y + c.h / 2 < groupCard.y + groupCard.h)
+    .map(c => ({ card: c, dx: c.x - groupCard.x, dy: c.y - groupCard.y }));
+}
 function startMove(e, card) {
   const el = e.target;
-  if (el.closest('.placed-card-btn') || el.closest('.resize-handle') || el.closest('.switch-toggle') || el.closest('.enum-cycle-btn')) return;
+  if (el.closest('.placed-card-btn') || el.closest('.resize-handle') || el.closest('.switch-toggle') || el.closest('.enum-cycle-btn') || el.closest('.cmd-send-btn') || el.closest('.range-input')) return;
+  groupDragMembers = card.type === 'group-box' ? collectGroupMembers(card) : null;
   dragState = { mode: 'move', card, startX: e.clientX, startY: e.clientY, origX: card.x, origY: card.y };
   e.preventDefault();
 }
@@ -1216,8 +1749,19 @@ function onMouseMove(e) {
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
   if (dragState.mode === 'move') {
-    dragState.card.x = Math.max(0, Math.round((dragState.origX + dx) / 10) * 10);
-    dragState.card.y = Math.max(0, Math.round((dragState.origY + dy) / 10) * 10);
+    const newX = Math.max(0, Math.round((dragState.origX + dx) / 10) * 10);
+    const newY = Math.max(0, Math.round((dragState.origY + dy) / 10) * 10);
+    /* 分组容器：成员跟随整体平移 */
+    if (groupDragMembers && dragState.card.type === 'group-box') {
+      const moveDx = newX - dragState.card.x;
+      const moveDy = newY - dragState.card.y;
+      for (const m of groupDragMembers) {
+        m.card.x = Math.max(0, m.card.x + moveDx);
+        m.card.y = Math.max(0, m.card.y + moveDy);
+      }
+    }
+    dragState.card.x = newX;
+    dragState.card.y = newY;
   } else {
     dragState.card.w = Math.max(160, dragState.origW + dx);
     dragState.card.h = Math.max(100, dragState.origH + dy);
@@ -1417,21 +1961,54 @@ function clearBoard() {
 /* ── 配置弹窗 ── */
 const configVisible = ref(false);
 const configCard = ref(null);
-const configDraft = reactive({ title: '', signalName: '', timeWindow: 30 });
+const configDraft = reactive({
+  title: '', signalName: '', timeWindow: 30,
+  cmdCode: null, fieldKey: '', text: '', filter: '', maxLines: 100,
+  min: 0, max: 100, step: 1,
+  onText: '', offText: '', invert: false,
+  alertDir: 'gt', threshold: 0,
+});
 
 function openConfig(card) {
   configCard.value = card;
   configDraft.title = card.config.title || '';
   configDraft.signalName = card.config.signalName || '';
   configDraft.timeWindow = card.config.timeWindow || 30;
+  configDraft.cmdCode = card.config.cmdCode ?? null;
+  configDraft.fieldKey = card.config.fieldKey || '';
+  configDraft.text = card.config.text || '';
+  configDraft.filter = card.config.filter || '';
+  configDraft.maxLines = card.config.maxLines || 100;
+  configDraft.min = card.config.min ?? 0;
+  configDraft.max = card.config.max ?? 100;
+  configDraft.step = card.config.step ?? 1;
+  configDraft.onText = card.config.onText || '';
+  configDraft.offText = card.config.offText || '';
+  configDraft.invert = !!card.config.invert;
+  configDraft.alertDir = card.config.alertDir || 'gt';
+  configDraft.threshold = card.config.threshold ?? 0;
   configVisible.value = true;
 }
 function closeConfig() { configVisible.value = false; configCard.value = null; }
 function saveConfig() {
   if (configCard.value) {
-    configCard.value.config.title = configDraft.title;
-    configCard.value.config.signalName = configDraft.signalName;
-    configCard.value.config.timeWindow = configDraft.timeWindow;
+    const c = configCard.value.config;
+    c.title = configDraft.title;
+    c.signalName = configDraft.signalName;
+    c.timeWindow = configDraft.timeWindow;
+    c.cmdCode = configDraft.cmdCode;
+    c.fieldKey = configDraft.fieldKey;
+    c.text = configDraft.text;
+    c.filter = configDraft.filter;
+    c.maxLines = configDraft.maxLines;
+    c.min = configDraft.min;
+    c.max = configDraft.max;
+    c.step = configDraft.step;
+    c.onText = configDraft.onText;
+    c.offText = configDraft.offText;
+    c.invert = configDraft.invert;
+    c.alertDir = configDraft.alertDir;
+    c.threshold = configDraft.threshold;
     persist();
   }
   closeConfig();
@@ -1440,6 +2017,130 @@ function saveConfig() {
 /* ── localStorage 持久化 ── */
 const STORAGE_KEY = 'spm-board-layout';
 const CONN_STORAGE_KEY = 'spm-board-connections';
+
+/* ── 工作流导出 / 导入：布局 + 绑定关系 + 协议名，JSON 文件 ── */
+const importFileRef = ref(null);
+const WORKFLOW_MAGIC = 'baudlab-board-workflow';
+
+function currentProtoName() {
+  const p = protoList.value.find(x => x.id === selectedProtoId.value);
+  return p ? `${p.name} ${p.version}` : '';
+}
+
+function exportWorkflow() {
+  if (placedCards.length === 0) {
+    showToast('画布为空，先摆放组件再导出');
+    return;
+  }
+  const data = {
+    magic: WORKFLOW_MAGIC,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    protocolName: currentProtoName(),
+    cards: placedCards.map(c => ({
+      type: c.type, iconRef: c.iconRef, name: c.name,
+      x: c.x, y: c.y, w: c.w, h: c.h, config: JSON.parse(JSON.stringify(c.config)),
+    })),
+    /* 连线引用的卡片用数组序号（1 起）表示，与运行时 id 解耦 */
+    connections: connections.map(c => ({
+      fromCardIdx: placedCards.findIndex(p => p.id === c.fromCardId) + 1,
+      toCardIdx: placedCards.findIndex(p => p.id === c.toCardId) + 1,
+      conditionType: c.conditionType, conditionValue: c.conditionValue, actionType: c.actionType,
+    })),
+  };
+  const content = JSON.stringify(data, null, 2);
+  const fileName = `看板工作流-${currentProtoName() || '未命名'}-${new Date().toISOString().slice(0, 10)}.json`;
+  if (hasElectron && window.electronAPI.export) {
+    window.electronAPI.export.saveFile({ defaultFileName: fileName, format: 'json', content })
+      .then((res) => {
+        if (res?.success) showToast('工作流已导出', 'success');
+        else if (!res?.canceled) showToast(res?.error || '导出失败', 'error');
+      })
+      .catch(() => showToast('导出失败', 'error'));
+  } else {
+    /* 浏览器环境兜底：Blob 下载 */
+    const blob = new Blob([content], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+}
+
+function triggerImport() {
+  importFileRef.value && importFileRef.value.click();
+}
+
+function onImportFile(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || data.magic !== WORKFLOW_MAGIC || !Array.isArray(data.cards)) {
+        showToast('文件格式不对：请选择看板导出的工作流 JSON', 'error');
+        return;
+      }
+      applyWorkflow(data);
+      showToast(`已导入 ${data.cards.length} 个组件${data.connections?.length ? '、' + data.connections.length + ' 条连线' : ''}`, 'success');
+    } catch (err) {
+      showToast('工作流解析失败：' + (err?.message || err), 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* 应用导入的工作流：清空画布 → 恢复卡片/连线 → 自动匹配协议 */
+async function applyWorkflow(data) {
+  clearBoard();
+  placedCards.splice(0);
+  /* 卡片 id 重新分配；连线用文件里的数组序号映射到新 id */
+  const idMap = {};
+  data.cards.forEach((c, idx) => {
+    const lib = componentLibrary.find(l => l.type === c.type);
+    const newId = nextId++;
+    idMap[idx + 1] = newId;
+    placedCards.push({
+      id: newId,
+      type: c.type,
+      iconRef: c.iconRef || lib?.iconRef || 'i-board-card',
+      name: c.name || lib?.name || c.type,
+      x: c.x || 0, y: c.y || 0, w: c.w || 200, h: c.h || 150,
+      config: { title: '', signalName: '', timeWindow: 30, cmdCode: null, fieldKey: '', text: '', filter: '', maxLines: 100, min: 0, max: 100, step: 1, onText: '', offText: '', invert: false, alertDir: 'gt', threshold: 0, ...(c.config || {}) },
+      _flash: 0,
+    });
+  });
+  connections.splice(0);
+  for (const c of (data.connections || [])) {
+    const fromIdx = c.fromCardIdx ?? c.fromCardId;
+    const toIdx = c.toCardIdx ?? c.toCardId;
+    const fromId = idMap[fromIdx];
+    const toId = idMap[toIdx];
+    if (!fromId || !toId) continue;
+    if (!placedCards.find(card => card.id === fromId) || !placedCards.find(card => card.id === toId)) continue;
+    connections.push({
+      id: nextConnId++,
+      fromCardId: fromId, toCardId: toId,
+      conditionType: c.conditionType || 'gt',
+      conditionValue: Number(c.conditionValue) || 0,
+      actionType: c.actionType || 'highlight',
+      _lastTriggered: 0, _flash: 0,
+    });
+  }
+  persist();
+  /* 按协议名自动匹配，恢复信号绑定 */
+  if (data.protocolName) {
+    const matched = protoList.value.find(p => `${p.name} ${p.version}` === data.protocolName || p.name === data.protocolName);
+    if (matched && matched.id !== selectedProtoId.value) {
+      selectedProtoId.value = matched.id;
+      await onProtoChange();
+    }
+  }
+}
+
 function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(placedCards));
@@ -1588,7 +2289,7 @@ onUnmounted(() => {
   border-color: var(--border-light);
 }
 .component-item:active { cursor: grabbing; }
-.component-icon { flex-shrink: 0; color: var(--accent-color, #f59e0b); }
+.component-icon { flex-shrink: 0; color: var(--accent); }
 .component-info { display: flex; flex-direction: column; gap: 2px; }
 .component-info b { font-size: 13px; color: var(--text-primary); }
 .component-info span { font-size: 11px; color: var(--text-tertiary); }
@@ -1599,7 +2300,7 @@ onUnmounted(() => {
   left: calc(var(--board-sidebar-width, 220px) + 8px);
   width: 260px;
   background: var(--bg-secondary);
-  border: 1px solid var(--accent-color, #f59e0b);
+  border: 1px solid var(--accent);
   border-radius: var(--radius-md, 8px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 1000;
@@ -1609,7 +2310,7 @@ onUnmounted(() => {
 .comp-preview-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent-color, #f59e0b);
+  color: var(--accent);
   margin-bottom: 10px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border-color, #2d2d3f);
@@ -1716,7 +2417,7 @@ onUnmounted(() => {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.signal-dot.number { background: var(--accent-color); }
+.signal-dot.number { background: var(--accent); }
 .signal-dot.boolean { background: #22c55e; }
 .signal-dot.enum { background: #a855f7; }
 .signal-name { font-size: 12px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1795,7 +2496,7 @@ onUnmounted(() => {
   overflow: hidden;
 }
 .placed-card:hover {
-  border-color: var(--accent-color);
+  border-color: var(--accent);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 .placed-card.unbound { border-style: dashed; }
@@ -1808,7 +2509,7 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--border-light);
   background: var(--bg-secondary);
 }
-.placed-card-icon { flex-shrink: 0; color: var(--accent-color, #f59e0b); }
+.placed-card-icon { flex-shrink: 0; color: var(--accent); }
 .placed-card-name { font-size: 12px; font-weight: 600; color: var(--text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .placed-card-btn {
   width: 20px; height: 20px;
@@ -1840,7 +2541,7 @@ onUnmounted(() => {
   line-height: 1.2;
   margin: 0;
 }
-.data-value.number { color: var(--accent-color); }
+.data-value.number { color: var(--accent); }
 .data-value.boolean { color: #22c55e; }
 .data-value.enum { color: #a855f7; }
 .data-value small { font-size: 14px; font-weight: 400; color: var(--text-tertiary); margin-left: 4px; }
@@ -1857,7 +2558,7 @@ onUnmounted(() => {
 /* 折线图 */
 .chart-view { width: 100%; height: 100%; display: flex; flex-direction: column; align-self: stretch; }
 .chart-svg { display: block; }
-.chart-line { fill: none; stroke: var(--accent-color, #f59e0b); stroke-width: 1.5; }
+.chart-line { fill: none; stroke: var(--accent); stroke-width: 1.5; }
 .chart-grid-line { stroke: var(--border-light, rgba(0,0,0,0.06)); stroke-dasharray: 2 3; }
 .chart-labels {
   display: flex;
@@ -1891,21 +2592,21 @@ onUnmounted(() => {
 }
 .switch-toggle.on .switch-knob { transform: translateX(20px); }
 .switch-state { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-top: 6px; }
-.switch-state.enum-label { color: var(--accent-color, #f59e0b); font-size: 14px; }
+.switch-state.enum-label { color: var(--accent); font-size: 14px; }
 .enum-cycle-btn {
   padding: 4px 14px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent-color, #f59e0b);
-  background: color-mix(in srgb, var(--accent-color, #f59e0b) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent-color, #f59e0b) 40%, transparent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .enum-cycle-btn:hover {
-  background: color-mix(in srgb, var(--accent-color, #f59e0b) 20%, transparent);
-  border-color: var(--accent-color, #f59e0b);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: var(--accent);
 }
 .switch-signal-name { font-size: 11px; color: var(--text-tertiary); }
 
@@ -1918,7 +2619,7 @@ onUnmounted(() => {
   background: linear-gradient(135deg, transparent 50%, var(--border-color) 50%, var(--border-color) 60%, transparent 60%, transparent 70%, var(--border-color) 70%, var(--border-color) 80%, transparent 80%);
 }
 .resize-handle:hover {
-  background: linear-gradient(135deg, transparent 50%, var(--accent-color) 50%, var(--accent-color) 60%, transparent 60%, transparent 70%, var(--accent-color) 70%, var(--accent-color) 80%, transparent 80%);
+  background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%, transparent 70%, var(--accent) 70%, var(--accent) 80%, transparent 80%);
 }
 
 /* ── 连线层 ── */
@@ -1931,7 +2632,7 @@ onUnmounted(() => {
 }
 .connection-path {
   fill: none;
-  stroke: #f59e0b;
+  stroke: #5e6ad2;
   stroke-width: 2;
   opacity: 0.7;
   transition: stroke 0.2s, stroke-width 0.2s, opacity 0.2s;
@@ -1943,7 +2644,7 @@ onUnmounted(() => {
   opacity: 1;
 }
 .connection-path.dragging {
-  stroke: #fbbf24;
+  stroke: #828fff;
   stroke-dasharray: 6 4;
   opacity: 0.8;
   animation: dash-flow 0.5s linear infinite;
@@ -1957,7 +2658,7 @@ onUnmounted(() => {
   filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.5));
 }
 .connection-path.pending {
-  stroke: #f59e0b;
+  stroke: #5e6ad2;
   stroke-width: 2.5;
   opacity: 0;
   stroke-dasharray: 1000;
@@ -2015,20 +2716,20 @@ onUnmounted(() => {
   height: 10px;
   border-radius: 50%;
   background: #fff;
-  border: 2px solid #f59e0b;
+  border: 2px solid #5e6ad2;
   transition: all 0.15s ease;
 }
 .card-port.port-out:hover .port-dot {
   width: 12px;
   height: 12px;
-  background: #f59e0b;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  background: #5e6ad2;
+  box-shadow: 0 0 6px rgba(94, 106, 210, 0.6);
 }
 .card-port.port-in .port-dot {
   border-color: #9ca3af;
 }
 .placed-card:hover .card-port.port-in .port-dot {
-  border-color: #f59e0b;
+  border-color: #5e6ad2;
 }
 .card-port.port-in.port-hover .port-dot {
   border-color: #22c55e;
@@ -2078,17 +2779,319 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .link-summary-arrow {
-  color: var(--accent-color);
+  color: var(--accent);
   font-size: 16px;
   font-weight: bold;
 }
 .link-config-hint {
   margin-top: 12px;
   padding: 8px 12px;
-  background: rgba(245, 158, 11, 0.08);
+  background: rgba(94, 106, 210, 0.08);
   border-radius: var(--radius-sm);
   font-size: 11px;
   color: var(--text-secondary);
   line-height: 1.5;
 }
+
+/* ══════════ 新组件样式 ══════════ */
+
+/* 分组容器：垫底、虚线框、透明背景 */
+.placed-card.group-box {
+  z-index: 1;
+  background: transparent;
+  border: 1.5px dashed var(--border-color);
+  box-shadow: none;
+  border-radius: var(--radius-lg);
+}
+.placed-card.group-box:hover { border-color: var(--accent); }
+.placed-card.group-box .placed-card-header {
+  background: transparent;
+  border-bottom-color: transparent;
+  opacity: 0.75;
+}
+.group-view { width: 100%; height: 100%; position: relative; }
+.group-label {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  user-select: none;
+}
+
+/* 命令按钮 */
+.cmd-btn-view { text-align: center; }
+.cmd-send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.cmd-send-btn:hover { background: var(--accent-hover); }
+.cmd-send-btn:active { transform: scale(0.96); }
+.cmd-send-btn:disabled { opacity: 0.55; cursor: wait; }
+.cmd-btn-sub { font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; font-family: var(--font-mono, monospace); }
+
+/* 仪表盘 */
+.gauge-view { width: 100%; }
+.gauge-value { font-size: 26px; font-weight: 700; fill: var(--text-primary); }
+.gauge-unit { font-size: 12px; font-weight: 400; fill: var(--text-tertiary); }
+.gauge-signal-name { font-size: 10.5px; color: var(--text-tertiary); text-align: center; margin-top: 2px; }
+
+/* 状态指示灯 */
+.lamp-view { text-align: center; }
+.lamp-dot {
+  display: inline-block;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.lamp-dot.on {
+  background: var(--accent-green);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.55), inset 0 -3px 6px rgba(0, 0, 0, 0.18);
+}
+.lamp-dot.off {
+  background: var(--bg-active);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+.lamp-state { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 8px; }
+.lamp-signal-name { font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px; }
+
+/* 位域面板 */
+.bitfield-view { width: 100%; }
+.bit-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+}
+.bit-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 44px;
+  padding: 5px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  transition: all 0.2s ease;
+}
+.bit-box.on {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+.bit-idx { font-size: 9px; color: var(--text-muted, #888); font-family: var(--font-mono, monospace); }
+.bit-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bit-box.on .bit-name { color: var(--accent-green); }
+.bitfield-signal-name { font-size: 10.5px; color: var(--text-tertiary); text-align: center; margin-top: 6px; }
+
+/* 统计卡 */
+.stats-view { width: 100%; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.stat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 7px 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+.stat-k { font-size: 10px; color: var(--text-tertiary); }
+.stat-v { font-size: 15px; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono, monospace); }
+.stats-signal-name { font-size: 10.5px; color: var(--text-tertiary); text-align: center; margin-top: 6px; }
+
+/* 滑块控制 */
+.slider-view { width: 100%; }
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.range-input {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.slider-val {
+  min-width: 58px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--font-mono, monospace);
+}
+.slider-val small { font-size: 10px; font-weight: 400; color: var(--text-tertiary); margin-left: 2px; }
+.slider-signal-name { font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; }
+
+/* 阈值告警 */
+.alert-view {
+  width: 100%;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+.alert-view.alerting {
+  background: rgba(239, 68, 68, 0.08);
+}
+.placed-card:has(.alert-view.alerting) { border-color: var(--accent-red); }
+.alert-icon-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+}
+.alert-view.alerting .alert-icon-row { color: var(--accent-red); }
+.alert-state-text { font-size: 11px; font-weight: 600; }
+.alert-view.alerting .alert-state-text { color: var(--accent-red); }
+.alert-value { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 4px; }
+.alert-view.alerting .alert-value { color: var(--accent-red); }
+.alert-value small { font-size: 12px; font-weight: 400; color: var(--text-tertiary); margin-left: 3px; }
+.alert-cond { font-size: 10.5px; color: var(--text-tertiary); font-family: var(--font-mono, monospace); margin-top: 2px; }
+
+/* 报文日志 */
+.log-view { width: 100%; height: 100%; }
+.log-body {
+  height: 100%;
+  overflow-y: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  line-height: 1.7;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.log-line {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+.log-time { color: var(--text-muted, #888); flex-shrink: 0; }
+.log-cmd { color: var(--accent); font-weight: 600; flex-shrink: 0; }
+.log-cmd.unk { color: var(--text-tertiary); font-weight: 400; }
+.log-hex { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
+.log-empty { color: var(--text-tertiary); text-align: center; padding: 12px 0; }
+
+/* 文本备注 */
+.note-view { width: 100%; }
+.note-text {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── 新组件悬浮预览演示 ── */
+.cmd-demo { align-items: center; }
+.demo-cmd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 8px;
+}
+.demo-cmd-btn.secondary { opacity: 0.65; }
+.gauge-demo { align-items: center; }
+.demo-gauge-svg { width: 130px; }
+.demo-gauge-val { font-size: 17px; font-weight: 700; fill: var(--text-primary); }
+.demo-gauge-label { font-size: 10.5px; color: var(--text-tertiary); margin-top: 4px; }
+.lamp-demo { gap: 4px; }
+.demo-lamp-row { display: flex; align-items: center; gap: 10px; }
+.demo-lamp { width: 18px; height: 18px; border-radius: 50%; }
+.demo-lamp.on { background: var(--accent-green); box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+.demo-lamp.off { background: var(--bg-active); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25); }
+.demo-lamp-label { font-size: 11.5px; color: var(--text-secondary); }
+.slider-demo { padding: 4px 2px; }
+.demo-slider-row { display: flex; align-items: center; gap: 8px; }
+.demo-slider-label { font-size: 11px; color: var(--text-secondary); flex-shrink: 0; }
+.demo-slider-track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-active);
+}
+.demo-slider-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.demo-slider-knob {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.demo-slider-val { font-size: 12px; font-weight: 700; color: var(--accent); flex-shrink: 0; font-family: var(--font-mono, monospace); }
+.demo-generic { align-items: center; padding: 6px 0; }
+.demo-generic-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(94, 106, 210, 0.1);
+  color: var(--accent);
+}
+.demo-generic-text { font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; text-align: center; }
+
+/* ── 配置弹窗扩展 ── */
+.form-row-pair {
+  display: flex;
+  gap: 10px;
+}
+.form-row-pair .form-row { flex: 1; }
+.config-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: rgba(94, 106, 210, 0.07);
+  border-radius: 6px;
+  padding: 7px 10px;
+  line-height: 1.5;
+}
+.config-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 400;
+}
+.config-check input { accent-color: var(--accent); }
 </style>

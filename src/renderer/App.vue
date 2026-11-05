@@ -601,7 +601,7 @@
   <div class="app-window" v-show="!showLogin">
     <div class="app-body">
       <!-- 侧边导航 -->
-      <nav class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+      <nav class="sidebar" :class="{ collapsed: sidebarCollapsed }" @contextmenu="openNavCtxMenu">
         <div class="nav-section">
           <div class="nav-label-row">
             <div class="nav-label">工作区</div>
@@ -634,11 +634,36 @@
         </div>
       </nav>
 
-      <!-- 用户菜单弹窗 -->
+      <!-- 工作区右键菜单：显示 / 隐藏导航项 -->
+      <div
+        v-if="navCtx.show"
+        class="nav-ctx-menu"
+        :style="{ left: navCtx.x + 'px', top: navCtx.y + 'px' }"
+        @click.stop
+        @contextmenu.prevent.stop
+      >
+        <button
+          v-for="def in NAV_DEFS"
+          :key="def.view"
+          class="nav-ctx-item"
+          @click="toggleNavView(def.view)"
+        >
+          <span class="nav-ctx-check">
+            <svg v-if="!hiddenNavViews.includes(def.view)" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg>
+          </span>
+          <span class="nav-ctx-text">{{ def.text }}</span>
+        </button>
+        <div class="nav-ctx-sep"></div>
+        <button class="nav-ctx-item" @click="resetNavLayout">
+          <span class="nav-ctx-check"></span>
+          <span class="nav-ctx-text">重置工作区布局</span>
+        </button>
+      </div>
+
+      <!-- 用户菜单弹窗（锚定侧边栏内部，展开/收起都固定在左下角） -->
       <div
         class="user-menu-popup"
         :class="{ show: userMenuOpen }"
-        :style="{ left: sidebarCollapsed ? '76px' : '252px' }"
         v-show="userMenuOpen"
         @click.stop
       >
@@ -817,7 +842,7 @@
             <div class="modal-body">
               <!-- 检查中 -->
               <div v-if="updateCheckResult.status === 'checking'" style="text-align:center;padding:10px 0;">
-                <div style="width:40px;height:40px;border:3px solid var(--border-light);border-top-color:var(--accent-color);border-radius:50%;margin:0 auto 12px;animation:spin 0.8s linear infinite;"></div>
+                <div style="width:40px;height:40px;border:3px solid var(--border-light);border-top-color:var(--accent);border-radius:50%;margin:0 auto 12px;animation:spin 0.8s linear infinite;"></div>
                 <p style="color:var(--text-secondary);margin:0;">正在检查更新…</p>
               </div>
 
@@ -833,13 +858,13 @@
               <!-- 发现新版本 -->
               <div v-else-if="updateCheckResult.status === 'available'">
                 <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
-                  <div style="width:44px;height:44px;border-radius:10px;background:rgba(245,158,11,0.12);color:var(--accent-color);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <div style="width:44px;height:44px;border-radius:10px;background:rgba(94,106,210,0.12);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-download"/></svg>
                   </div>
                   <div style="flex:1;min-width:0;">
                     <div style="font-weight:600;color:var(--text-primary);margin-bottom:2px;">发现新版本</div>
                     <div style="font-size:13px;color:var(--text-tertiary);">
-                      新版本 <span style="color:var(--accent-color);font-weight:600;">v{{ updateCheckResult.version }}</span>
+                      新版本 <span style="color:var(--accent);font-weight:600;">v{{ updateCheckResult.version }}</span>
                       · 当前 v{{ updateCheckResult.currentVersion }}
                     </div>
                   </div>
@@ -1151,7 +1176,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch, toRaw } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, watch, toRaw, nextTick } from 'vue';
 import { useTheme } from './composables/useTheme';
 import { useLogSettings } from './composables/useLogSettings';
 import { useReviewQueue } from './composables/useReviewQueue';
@@ -2739,9 +2764,13 @@ function onSpmSwitchView(e) {
 }
 onMounted(() => {
   window.addEventListener('spm-switch-view', onSpmSwitchView);
+  window.addEventListener('click', closeNavCtxMenu);
+  window.addEventListener('contextmenu', onWindowNavCtxClose, true);
 });
 onUnmounted(() => {
   window.removeEventListener('spm-switch-view', onSpmSwitchView);
+  window.removeEventListener('click', closeNavCtxMenu);
+  window.removeEventListener('contextmenu', onWindowNavCtxClose, true);
   if (offLoginScan) { offLoginScan(); offLoginScan = null; }
   stopUnreachableAutoRetry();
 });
@@ -2842,15 +2871,95 @@ async function loadMcpStatus(retries = 5) {
   } catch { /* 忽略，保持未启用显示 */ }
 }
 
-// 导航项（badge 数字动态响应审核状态）
-const navItems = computed(() => [
-  { view: 'debugger', iconRef: 'i-serial', text: '串口通信', badge: 'LIVE', badgeClass: 'live' },
-  { view: 'protocols', iconRef: 'i-protocol', text: '协议配置', badge: null },
-  { view: 'board', iconRef: 'i-dashboard', text: '自定义看板', badge: null },
-  { view: 'protocol-preview', iconRef: 'i-preview', text: '协议预览', badge: null },
-  { view: 'ai-chat', iconRef: 'i-ai', text: 'AI 助手', badge: null },
-  { view: 'audit', iconRef: 'i-audit', text: '变更审核', badge: auditPendingCount.value > 0 ? String(auditPendingCount.value) : null, badgeClass: '' },
-]);
+// 导航项：顺序与显隐可由用户调整（拖拽排序 / 右键菜单显隐），持久化到 localStorage
+const NAV_DEFS = [
+  { view: 'debugger', iconRef: 'i-serial', text: '串口通信' },
+  { view: 'protocols', iconRef: 'i-protocol', text: '协议配置' },
+  { view: 'board', iconRef: 'i-dashboard', text: '自定义看板' },
+  { view: 'protocol-preview', iconRef: 'i-preview', text: '协议预览' },
+  { view: 'ai-chat', iconRef: 'i-ai', text: 'AI 助手' },
+  { view: 'audit', iconRef: 'i-audit', text: '变更审核' },
+];
+const NAV_ORDER_KEY = 'spm-nav-order';
+const NAV_HIDDEN_KEY = 'spm-nav-hidden';
+
+function loadNavOrder() {
+  const known = NAV_DEFS.map((d) => d.view);
+  try {
+    const raw = JSON.parse(localStorage.getItem(NAV_ORDER_KEY) || '[]');
+    const valid = Array.isArray(raw) ? raw.filter((v) => known.includes(v)) : [];
+    return [...valid, ...known.filter((v) => !valid.includes(v))];
+  } catch { return known; }
+}
+function loadNavHidden() {
+  const known = NAV_DEFS.map((d) => d.view);
+  try {
+    const raw = JSON.parse(localStorage.getItem(NAV_HIDDEN_KEY) || '[]');
+    return Array.isArray(raw) ? raw.filter((v) => known.includes(v)) : [];
+  } catch { return []; }
+}
+
+const navOrder = ref(loadNavOrder());
+const hiddenNavViews = ref(loadNavHidden());
+
+function persistNavLayout() {
+  localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(navOrder.value));
+  localStorage.setItem(NAV_HIDDEN_KEY, JSON.stringify(hiddenNavViews.value));
+}
+
+const navItems = computed(() => navOrder.value
+  .filter((v) => !hiddenNavViews.value.includes(v))
+  .map((v) => {
+    const def = NAV_DEFS.find((d) => d.view === v);
+    if (v === 'debugger') return { ...def, badge: 'LIVE', badgeClass: 'live' };
+    if (v === 'audit') return { ...def, badge: auditPendingCount.value > 0 ? String(auditPendingCount.value) : null, badgeClass: '' };
+    return { ...def, badge: null, badgeClass: '' };
+  }));
+
+/* ── 右键菜单：显示 / 隐藏工作区项 ── */
+const navCtx = reactive({ show: false, x: 0, y: 0 });
+function openNavCtxMenu(e) {
+  e.preventDefault();
+  navCtx.show = true;
+  navCtx.x = e.clientX;
+  navCtx.y = e.clientY;
+  nextTick(() => {
+    /* 贴边时向内收 */
+    const el = document.querySelector('.nav-ctx-menu');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (navCtx.x + rect.width > window.innerWidth - 8) navCtx.x = window.innerWidth - rect.width - 8;
+    if (navCtx.y + rect.height > window.innerHeight - 8) navCtx.y = window.innerHeight - rect.height - 8;
+  });
+}
+function closeNavCtxMenu() { navCtx.show = false; }
+function toggleNavView(view) {
+  if (hiddenNavViews.value.includes(view)) {
+    hiddenNavViews.value = hiddenNavViews.value.filter((v) => v !== view);
+  } else {
+    hiddenNavViews.value = [...hiddenNavViews.value, view];
+    /* 隐藏的是当前页时，跳到第一个可见页 */
+    if (currentView.value === view) {
+      const first = navItems.value[0];
+      if (first) switchView(first.view);
+    }
+  }
+  persistNavLayout();
+  closeNavCtxMenu();
+}
+function resetNavLayout() {
+  navOrder.value = NAV_DEFS.map((d) => d.view);
+  hiddenNavViews.value = [];
+  persistNavLayout();
+  closeNavCtxMenu();
+}
+/* 菜单外的左键点击 / 右键：关闭菜单（侧边栏内的右键由 openNavCtxMenu 重新接管） */
+function onWindowNavCtxClose(e) {
+  if (!navCtx.show) return;
+  const t = e.target;
+  if (t && t.closest && (t.closest('.sidebar') || t.closest('.nav-ctx-menu'))) return;
+  closeNavCtxMenu();
+}
 
 // 侧边栏收起/展开
 const sidebarCollapsed = ref(false);

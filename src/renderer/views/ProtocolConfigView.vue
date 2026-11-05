@@ -346,19 +346,14 @@
                     </div>
                     <div class="field-card-row" v-if="key !== 'data'">
                       <span class="field-card-label">字节数</span>
-                      <select
-                        class="input byte-count-select"
+                      <AppSelect
+                        class="byte-count-select"
                         :data-byte-count="key"
                         v-model="fieldConfig[key].byteCount"
-                        draggable="false"
+                        :options="[{ value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 'custom', label: '自定义' }]"
                         @pointerdown.stop
                         @dragstart.prevent
-                      >
-                        <option :value="1">1</option>
-                        <option :value="2">2</option>
-                        <option :value="3">3</option>
-                        <option value="custom">自定义</option>
-                      </select>
+                      />
                       <input
                         type="number"
                         class="input byte-count-custom"
@@ -409,28 +404,22 @@
               <div class="form-row inline frame-global-row">
                 <div>
                   <label>字节序</label>
-                  <select class="input" v-model="endianness">
-                    <option value="小端 (Little-Endian)">小端 (Little-Endian)</option>
-                    <option value="大端 (Big-Endian)">大端 (Big-Endian)</option>
-                  </select>
+                  <AppSelect v-model="endianness" :options="[
+                    { value: '小端 (Little-Endian)', label: '小端 (Little-Endian)' },
+                    { value: '大端 (Big-Endian)', label: '大端 (Big-Endian)' },
+                  ]" />
                 </div>
                 <div>
                   <label>校验 CHK 方式</label>
-                  <select class="input" v-model="checkType">
-                    <option v-for="ct in checkTypes" :key="ct" :value="ct">{{ ct }}</option>
-                  </select>
+                  <AppSelect v-model="checkType" :options="checkTypes.map(ct => ({ value: ct, label: ct }))" />
                 </div>
                 <div>
                   <label>校验起始字节</label>
-                  <select class="input" v-model="checkStartField">
-                    <option v-for="f in checkFieldOptions" :key="f" :value="f">{{ f }}</option>
-                  </select>
+                  <AppSelect v-model="checkStartField" :options="checkFieldOptions.map(f => ({ value: f, label: f }))" />
                 </div>
                 <div>
                   <label>校验结束字节</label>
-                  <select class="input" v-model="checkEndField">
-                    <option v-for="f in checkFieldOptions" :key="f" :value="f">{{ f }}</option>
-                  </select>
+                  <AppSelect v-model="checkEndField" :options="checkFieldOptions.map(f => ({ value: f, label: f }))" />
                 </div>
               </div>
 
@@ -662,25 +651,22 @@
                   <div class="form-row inline">
                     <div class="sender-field">
                       <label>发送方</label>
-                      <select class="input" v-model="activeCommand.sender">
-                        <option v-for="mod in moduleAddresses" :key="mod.name" :value="mod.name">{{ mod.name }}</option>
-                      </select>
+                      <AppSelect v-model="activeCommand.sender" :options="moduleAddresses.map(mod => ({ value: mod.name, label: mod.name }))" />
                     </div>
                     <div class="receiver-field">
                       <label>接收方</label>
-                      <select class="input" v-model="activeCommand.receiver">
-                        <option v-for="mod in moduleAddresses" :key="mod.name" :value="mod.name">{{ mod.name }}</option>
-                      </select>
+                      <AppSelect v-model="activeCommand.receiver" :options="moduleAddresses.map(mod => ({ value: mod.name, label: mod.name }))" />
                     </div>
                     <div class="cycle-field"><label>周期 (ms)</label><input type="number" class="input" v-model="activeCommand.cycle" min="0"></div>
                   </div>
                   <div class="form-row inline payload-len-row">
                     <div class="payload-mode-field">
                       <label>载荷模式</label>
-                      <select class="input" :value="activeCommand.payloadMode || 'fixed'" @change="onPayloadModeChange">
-                        <option value="fixed">固定长度</option>
-                        <option value="varlen">变长 (LEN字段)</option>
-                      </select>
+                      <AppSelect
+                        :model-value="activeCommand.payloadMode || 'fixed'"
+                        :options="[{ value: 'fixed', label: '固定长度' }, { value: 'varlen', label: '变长 (LEN字段)' }]"
+                        @update:model-value="onPayloadModeChange"
+                      />
                     </div>
                     <div v-if="activeCommand.payloadMode !== 'varlen'" class="payload-len-field">
                       <label>载荷字节数</label>
@@ -731,19 +717,20 @@
                           <input type="text" class="input field-name-input" v-model="field.name" @click.stop>
                         </td>
                         <td>
-                          <select
-                            class="input field-type-select"
+                          <AppSelect
+                            class="field-type-select"
                             v-model="field.type"
+                            :options="[
+                              { value: 'bitfield', label: '位域解析' },
+                              { value: 'enum', label: '枚举映射' },
+                              { value: 'raw', label: '原始数值' },
+                              { value: 'number', label: '多字节整数' },
+                              { value: 'text', label: '文本/JSON' },
+                              { value: 'binary', label: '二进制段' },
+                            ]"
                             @change="onFieldTypeChange(field)"
                             @click.stop
-                          >
-                            <option value="bitfield">位域解析</option>
-                            <option value="enum">枚举映射</option>
-                            <option value="raw">原始数值</option>
-                            <option value="number">多字节整数</option>
-                            <option value="text">文本/JSON</option>
-                            <option value="binary">二进制段</option>
-                          </select>
+                          />
                         </td>
                         <td>
                           <div class="command-field-config" @click.stop>
@@ -793,58 +780,60 @@
                             </div>
                             <!-- 多字节整数 -->
                             <div v-else-if="field.type === 'number'" class="field-config-row" style="flex-wrap:wrap;gap:6px">
-                              <select class="input" style="width:auto" v-model="field.encoding" @change="onNumberEncodingChange(field)">
-                                <option value="uint8">uint8 (1B)</option>
-                                <option value="int8">int8 (1B)</option>
-                                <option value="uint16">uint16 (2B)</option>
-                                <option value="int16">int16 (2B)</option>
-                                <option value="uint32">uint32 (4B)</option>
-                                <option value="int32">int32 (4B)</option>
-                                <option value="float32">float32 (4B)</option>
-                                <option value="float64">float64 (8B)</option>
-                              </select>
+                              <AppSelect
+                                class="enc-select"
+                                style="width:auto"
+                                v-model="field.encoding"
+                                :options="[
+                                  { value: 'uint8', label: 'uint8 (1B)' },
+                                  { value: 'int8', label: 'int8 (1B)' },
+                                  { value: 'uint16', label: 'uint16 (2B)' },
+                                  { value: 'int16', label: 'int16 (2B)' },
+                                  { value: 'uint32', label: 'uint32 (4B)' },
+                                  { value: 'int32', label: 'int32 (4B)' },
+                                  { value: 'float32', label: 'float32 (4B)' },
+                                  { value: 'float64', label: 'float64 (8B)' },
+                                ]"
+                                @change="onNumberEncodingChange(field)"
+                              />
                               <input type="number" class="input" style="width:70px" v-model="field.scale" step="0.1" title="缩放系数: 物理值 = 原始值 × scale（偏移量/单位在下方物理属性行配置）">
                             </div>
                             <!-- 文本/JSON -->
                             <div v-else-if="field.type === 'text'" class="field-config-row" style="flex-wrap:wrap;gap:6px">
-                              <select class="input" style="width:auto" v-model="field.lengthMode">
-                                <option value="varlen-field">长度引用</option>
-                                <option value="varlen-delim">分隔符</option>
-                                <option value="varlen-rest">到帧尾</option>
-                                <option value="fixed">固定长度</option>
-                              </select>
-                              <select v-if="field.lengthMode === 'varlen-field'" class="input" style="width:auto" v-model="field.lengthField">
-                                <option value="len">LEN 字段</option>
-                              </select>
+                              <AppSelect style="width:auto" v-model="field.lengthMode" :options="[
+                                { value: 'varlen-field', label: '长度引用' },
+                                { value: 'varlen-delim', label: '分隔符' },
+                                { value: 'varlen-rest', label: '到帧尾' },
+                                { value: 'fixed', label: '固定长度' },
+                              ]" />
+                              <AppSelect v-if="field.lengthMode === 'varlen-field'" style="width:auto" v-model="field.lengthField" :options="[{ value: 'len', label: 'LEN 字段' }]" />
                               <input v-if="field.lengthMode === 'fixed'" type="number" class="input" style="width:60px" v-model="field.length" min="1">
                               <input v-if="field.lengthMode === 'varlen-delim'" type="text" class="input" style="width:80px" v-model="field.delimiter" placeholder="0D0A" title="分隔符(HEX)">
-                              <select class="input" style="width:auto" v-model="field.encoding">
-                                <option value="utf8">UTF-8</option>
-                                <option value="ascii">ASCII</option>
-                                <option value="gbk">GBK</option>
-                              </select>
-                              <select class="input" style="width:auto" v-model="field.format">
-                                <option value="raw">原始文本</option>
-                                <option value="json">JSON 解析</option>
-                              </select>
+                              <AppSelect style="width:auto" v-model="field.encoding" :options="[
+                                { value: 'utf8', label: 'UTF-8' },
+                                { value: 'ascii', label: 'ASCII' },
+                                { value: 'gbk', label: 'GBK' },
+                              ]" />
+                              <AppSelect style="width:auto" v-model="field.format" :options="[
+                                { value: 'raw', label: '原始文本' },
+                                { value: 'json', label: 'JSON 解析' },
+                              ]" />
                             </div>
                             <!-- 二进制段 -->
                             <div v-else-if="field.type === 'binary'" class="field-config-row" style="flex-wrap:wrap;gap:6px">
-                              <select class="input" style="width:auto" v-model="field.lengthMode">
-                                <option value="varlen-field">长度引用</option>
-                                <option value="varlen-delim">分隔符</option>
-                                <option value="varlen-rest">到帧尾</option>
-                                <option value="fixed">固定长度</option>
-                              </select>
-                              <select v-if="field.lengthMode === 'varlen-field'" class="input" style="width:auto" v-model="field.lengthField">
-                                <option value="len">LEN 字段</option>
-                              </select>
+                              <AppSelect style="width:auto" v-model="field.lengthMode" :options="[
+                                { value: 'varlen-field', label: '长度引用' },
+                                { value: 'varlen-delim', label: '分隔符' },
+                                { value: 'varlen-rest', label: '到帧尾' },
+                                { value: 'fixed', label: '固定长度' },
+                              ]" />
+                              <AppSelect v-if="field.lengthMode === 'varlen-field'" style="width:auto" v-model="field.lengthField" :options="[{ value: 'len', label: 'LEN 字段' }]" />
                               <input v-if="field.lengthMode === 'fixed'" type="number" class="input" style="width:60px" v-model="field.length" min="1">
                               <input v-if="field.lengthMode === 'varlen-delim'" type="text" class="input" style="width:80px" v-model="field.delimiter" placeholder="0D0A" title="分隔符(HEX)">
-                              <select class="input" style="width:auto" v-model="field.encoding">
-                                <option value="hex">HEX 显示</option>
-                                <option value="base64">Base64</option>
-                              </select>
+                              <AppSelect style="width:auto" v-model="field.encoding" :options="[
+                                { value: 'hex', label: 'HEX 显示' },
+                                { value: 'base64', label: 'Base64' },
+                              ]" />
                             </div>
                             <!-- 物理属性（所有字段类型通用）：未配置时默认显示 / -->
                             <div class="field-phys-row">
@@ -1054,6 +1043,7 @@
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import { useReviewQueue } from '../composables/useReviewQueue';
 import { useCurrentUser } from '../composables/useCurrentUser';
+import AppSelect from '../components/AppSelect.vue';
 
 /* ===================== 共享审核队列 ===================== */
 const { submitReview, publishReview, directPublishReview, reviewQueue, isLoaded: reviewLoaded } = useReviewQueue();
@@ -1688,9 +1678,9 @@ function onPayloadLenChange(event) {
 /**
  * 载荷模式切换：fixed <-> varlen
  */
-function onPayloadModeChange(event) {
+function onPayloadModeChange(value) {
   if (!activeCommand.value) return;
-  activeCommand.value.payloadMode = event.target.value;
+  activeCommand.value.payloadMode = value;
 }
 
 /**
@@ -4711,7 +4701,7 @@ watch(currentUser, async (newUser, oldUser) => {
   display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
 }
-.archive-dialog .modal-close:hover { color: var(--accent-color, #f59e0b); background: var(--bg-tertiary, #2a2a3e); }
+.archive-dialog .modal-close:hover { color: var(--accent); background: var(--bg-tertiary, #2a2a3e); }
 .archive-dialog .modal-body { padding: 16px 20px; }
 
 .archive-proto-info {
@@ -4719,12 +4709,12 @@ watch(currentUser, async (newUser, oldUser) => {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(94, 106, 210, 0.08);
+  border: 1px solid rgba(94, 106, 210, 0.2);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent-color, #f59e0b);
+  color: var(--accent);
   margin-bottom: 16px;
 }
 
@@ -4758,13 +4748,13 @@ watch(currentUser, async (newUser, oldUser) => {
   transition: all 0.15s;
 }
 .archive-project-item:hover {
-  border-color: var(--accent-color, #f59e0b);
+  border-color: var(--accent);
   background: var(--bg-tertiary, #2a2a3e);
 }
 .archive-project-item.active {
-  border-color: var(--accent-color, #f59e0b);
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--accent-color, #f59e0b);
+  border-color: var(--accent);
+  background: rgba(94, 106, 210, 0.1);
+  color: var(--accent);
 }
 .archive-project-item svg.archive-project-icon { margin-right: 0; flex-shrink: 0; }
 .archive-project-item svg:not(.archive-project-icon) { margin-left: auto; }
@@ -4804,8 +4794,8 @@ watch(currentUser, async (newUser, oldUser) => {
   border: 1px dashed var(--border-color, #2d2d3f);
 }
 .archive-new-btn:hover {
-  border-color: var(--accent-color, #f59e0b);
-  color: var(--accent-color, #f59e0b);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .archive-input-wrap {
@@ -4861,7 +4851,7 @@ watch(currentUser, async (newUser, oldUser) => {
   overflow: hidden;
 }
 .color-dot.sm.more-color:hover {
-  color: var(--accent-color, #f59e0b);
+  color: var(--accent);
 }
 .color-dot.sm.more-color input[type="color"] {
   position: absolute;
@@ -5066,7 +5056,7 @@ watch(currentUser, async (newUser, oldUser) => {
 }
 .ctx-menu-item:hover {
   background: var(--bg-tertiary, #2a2a3e);
-  color: var(--accent-color, #f59e0b);
+  color: var(--accent);
 }
 
 /* 删除协议确认弹窗：小尺寸 + 警示图标 + 文案一行排布 */
@@ -5097,7 +5087,7 @@ watch(currentUser, async (newUser, oldUser) => {
   transition: all 0.15s;
 }
 .delete-dialog .modal-close:hover {
-  color: var(--accent-color, #f59e0b);
+  color: var(--accent);
   background: var(--bg-tertiary, #2a2a3e);
 }
 .delete-confirm-body {
