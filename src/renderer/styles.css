@@ -365,7 +365,6 @@ html, body {
 .sidebar.collapsed .nav-label,
 .sidebar.collapsed .nav-text,
 .sidebar.collapsed .nav-badge,
-.sidebar.collapsed .sidebar-footer,
 .sidebar.collapsed .user-info,
 .sidebar.collapsed .user-arrow {
   opacity: 0;
@@ -373,6 +372,14 @@ html, body {
   position: absolute;
   width: 0;
   overflow: hidden;
+}
+
+/* 收起态：底部保留用户头像（与导航图标同规格的圆形），只藏文字 */
+.sidebar.collapsed .sidebar-footer {
+  border-top: none;
+  padding-top: 0;
+  display: flex;
+  justify-content: center;
 }
 
 .sidebar.collapsed .nav-item {
@@ -395,7 +402,12 @@ html, body {
 
 .sidebar.collapsed .user-mini {
   justify-content: center;
-  padding: 10px;
+  padding: 4px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 .sidebar.collapsed .user-avatar {

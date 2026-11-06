@@ -47,3 +47,15 @@ __pycache__/
 # ── Agent 工作区记忆（勿提交）──
 .workbuddy/
 designs/baudlab-redesign/BaudLab 风格探索.html
+AGENTS.md
+docs/INDEX.md
+docs/maintenance/01-项目概览.md
+docs/maintenance/02-架构总览.md
+docs/maintenance/03-主进程模块.md
+docs/maintenance/04-渲染层模块.md
+docs/maintenance/05-数据存储.md
+docs/maintenance/06-串口与协议引擎.md
+docs/maintenance/07-AI与MCP接入.md
+docs/maintenance/08-团队服务器.md
+docs/maintenance/09-构建发布与更新.md
+docs/maintenance/10-开发与排障手册.md
